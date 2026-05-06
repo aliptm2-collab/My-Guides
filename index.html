@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Árbol de Decisiones SDR · Agencia Aduanal</title>
+<style>
+  :root{
+    --navy:#0b2545;--navy-2:#13315c;--teal:#1f6f8b;--teal-soft:#a5d8e6;
+    --gold:#d4a017;--gold-soft:#f5d76e;
+    --bg:#f4f6fa;--card:#ffffff;--text:#1a1a2e;--muted:#5a6478;--border:#e2e8f0;
+    --green:#2f855a;--green-soft:#c6f6d5;--red:#c53030;--red-soft:#fed7d7;
+    --amber:#b7791f;--purple:#7c3aed;
+    --shadow:0 4px 20px rgba(11,37,69,.08);
+    --shadow-lg:0 10px 40px rgba(11,37,69,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+  /* ===== Header ===== */
+  header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 60%,var(--teal) 120%);color:#fff;padding:24px 24px 0;box-shadow:var(--shadow)}
+  .header-inner{max-width:1320px;margin:0 auto}
+  .breadcrumb{font-size:12px;letter-spacing:1.5px;color:var(--gold-soft);text-transform:uppercase;margin-bottom:8px;font-weight:600}
+  h1{font-size:28px;font-weight:700;margin-bottom:6px;letter-spacing:-.5px}
+  .subtitle{color:#cdd5e0;font-size:14px;max-width:780px;margin-bottom:18px}
+
+  /* Main view tabs */
+  .view-tabs{display:flex;gap:0;border-bottom:0;margin-top:14px}
+  .view-tab{
+    padding:12px 22px;background:transparent;color:#cdd5e0;border:none;
+    font-size:14px;font-weight:600;cursor:pointer;border-radius:10px 10px 0 0;
+    transition:all .15s;font-family:inherit;
+    border-bottom:3px solid transparent;
+  }
+  .view-tab:hover{color:#fff;background:rgba(255,255,255,.05)}
+  .view-tab.active{background:var(--bg);color:var(--navy);border-bottom-color:var(--gold)}
+  .view-tab .icon{margin-right:6px}
+
+  /* ===== View container ===== */
+  main{max-width:1320px;margin:0 auto;padding:24px;min-height:60vh}
+  .view{display:none}
+  .view.active{display:block;animation:fadeIn .25s}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* ===== Persona selector ===== */
+  .persona-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px}
+  .persona-card{
+    background:var(--card);border:2px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;
+    transition:all .2s;text-align:center;position:relative;overflow:hidden;
+  }
+  .persona-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--teal)}
+  .persona-card.active{border-color:var(--gold);background:linear-gradient(135deg,#fffbeb 0%,#ffffff 80%);box-shadow:var(--shadow-lg)}
+  .persona-card.active::before{content:"✓ ACTIVO";position:absolute;top:10px;right:10px;background:var(--gold);color:var(--navy);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.5px}
+  .persona-icon{width:56px;height:56px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px}
+  .persona-card[data-p="recepcionista"] .persona-icon{background:linear-gradient(135deg,#7c3aed,#9333ea)}
+  .persona-card[data-p="gerente"] .persona-icon{background:linear-gradient(135deg,#0369a1,#1f6f8b)}
+  .persona-card[data-p="dueno"] .persona-icon{background:linear-gradient(135deg,#b7791f,#d4a017)}
+  .persona-card h3{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:4px}
+  .persona-card .role{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+  .persona-card .desc{font-size:13px;color:var(--muted);line-height:1.5}
+  .persona-card .goal{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--teal);font-weight:600}
+
+  /* ===== Mode sub-tabs (Guiado / Mapa) ===== */
+  .mode-tabs{display:inline-flex;background:#fff;border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px;box-shadow:var(--shadow)}
+  .mode-tab{padding:8px 18px;background:transparent;border:none;border-radius:7px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s}
+  .mode-tab.active{background:var(--navy);color:#fff}
+  .mode-tab:not(.active):hover{color:var(--navy)}
+
+  /* ===== Conversation walkthrough ===== */
+  .conv-shell{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+  @media(max-width:900px){.conv-shell{grid-template-columns:1fr}}
+
+  .conv-main{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);min-height:500px;display:flex;flex-direction:column}
+
+  .conv-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .conv-title{font-size:15px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+  .conv-actions{display:flex;gap:8px}
+  .btn{padding:7px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+  .btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .btn.primary{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+  .btn.primary:hover{background:var(--navy);color:#fff}
+
+  /* Trail (chat history) */
+  .trail{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;max-height:380px;overflow-y:auto;padding-right:4px}
+  .bubble{display:flex;gap:10px;align-items:flex-start;animation:slideIn .25s}
+  @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .bubble-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;color:#fff;font-weight:700}
+  .bubble-icon.sdr{background:var(--teal)}
+  .bubble-icon.prospect{background:var(--amber)}
+  .bubble-icon.system{background:var(--green)}
+  .bubble-body{flex:1;background:#f8fafc;border-radius:10px;padding:10px 14px;border-left:3px solid var(--teal)}
+  .bubble.prospect .bubble-body{border-left-color:var(--amber);background:#fefce8}
+  .bubble.system .bubble-body{border-left-color:var(--green);background:#f0fdf4}
+  .bubble-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:3px}
+  .bubble-text{font-size:13.5px;color:var(--text);line-height:1.5}
+  .bubble-text em{font-style:italic;color:var(--navy)}
+
+  /* Current decision */
+  .current-step{margin-top:auto;border-top:2px solid var(--border);padding-top:18px}
+  .step-prompt{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .step-prompt::before{content:"▼";color:var(--gold);animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .branches{display:flex;flex-direction:column;gap:8px}
+  .branch{
+    background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 16px;
+    cursor:pointer;text-align:left;font-family:inherit;font-size:13.5px;
+    transition:all .15s;display:flex;justify-content:space-between;align-items:center;gap:10px;
+    border-left:4px solid var(--amber);
+  }
+  .branch:hover{border-color:var(--teal);background:#f8fafc;transform:translateX(4px);box-shadow:var(--shadow)}
+  .branch-quote{flex:1;font-style:italic;color:var(--text)}
+  .branch-quote::before{content:"« ";color:var(--amber);font-style:normal}
+  .branch-quote::after{content:" »";color:var(--amber);font-style:normal}
+  .branch-arrow{color:var(--teal);font-weight:700;font-size:18px}
+
+  /* Terminal node */
+  .terminal{padding:24px;border-radius:12px;margin-top:14px}
+  .terminal.success{background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%);border:2px solid var(--green)}
+  .terminal.partial{background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:2px solid var(--amber)}
+  .terminal.fail{background:linear-gradient(135deg,#fee2e2 0%,#fecaca 100%);border:2px solid var(--red)}
+  .terminal h3{font-size:18px;font-weight:700;margin-bottom:8px;color:var(--navy)}
+  .terminal p{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:12px}
+  .terminal .next-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+  /* ===== Coach panel (right sidebar) ===== */
+  .coach{background:linear-gradient(160deg,#0b2545 0%,#13315c 100%);color:#fff;border-radius:14px;padding:20px;box-shadow:var(--shadow);position:sticky;top:20px}
+  .coach-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold-soft);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .coach-tip{font-size:13.5px;line-height:1.55;margin-bottom:16px;color:#e2e8f0}
+  .coach-section{padding-top:14px;margin-top:14px;border-top:1px solid rgba(255,255,255,.15)}
+  .coach-section:first-of-type{padding-top:0;margin-top:0;border-top:none}
+  .coach-list{list-style:none;padding:0;font-size:12.5px;color:#cdd5e0}
+  .coach-list li{padding:4px 0 4px 18px;position:relative}
+  .coach-list li::before{content:"•";position:absolute;left:6px;color:var(--gold-soft);font-weight:700}
+  .coach-redflag li::before{content:"⚠";color:#fca5a5;font-size:11px}
+
+  .progress-mini{display:flex;align-items:center;gap:6px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.15)}
+  .progress-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25)}
+  .progress-dot.done{background:var(--gold)}
+  .progress-dot.current{background:#fff;box-shadow:0 0 0 3px rgba(245,215,110,.3)}
+  .progress-label{font-size:11px;color:#cdd5e0;margin-left:6px}
+
+  /* ===== Tree map view ===== */
+  .tree-wrap{background:#fff;border-radius:14px;padding:24px;box-shadow:var(--shadow);overflow-x:auto}
+  .tree-legend{display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .legend-item{display:flex;align-items:center;gap:6px}
+  .legend-dot{width:14px;height:14px;border-radius:4px}
+
+  /* Outline tree */
+  .otree{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .otree-node{margin:6px 0;position:relative}
+  .otree-node-content{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:10px 14px;border-radius:10px;
+    border:1px solid var(--border);background:#fff;
+    cursor:pointer;transition:all .15s;
+    max-width:680px;
+  }
+  .otree-node-content:hover{border-color:var(--teal);box-shadow:var(--shadow)}
+  .otree-node.sdr > .otree-node-content{border-left:4px solid var(--teal);background:#f0fafe}
+  .otree-node.prospect > .otree-node-content{border-left:4px solid var(--amber);background:#fefce8}
+  .otree-node.terminal-success > .otree-node-content{border-left:4px solid var(--green);background:#f0fdf4}
+  .otree-node.terminal-partial > .otree-node-content{border-left:4px solid var(--amber);background:#fffbeb}
+  .otree-node.terminal-fail > .otree-node-content{border-left:4px solid var(--red);background:#fef2f2}
+  .otree-toggle{
+    width:22px;height:22px;border-radius:5px;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;
+    cursor:pointer;flex-shrink:0;transition:transform .15s;
+  }
+  .otree-toggle.collapsed{background:var(--muted)}
+  .otree-toggle.leaf{background:transparent;color:transparent;cursor:default}
+  .otree-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;flex-shrink:0}
+  .otree-icon.sdr{background:var(--teal)}
+  .otree-icon.prospect{background:var(--amber)}
+  .otree-icon.terminal{background:var(--green)}
+  .otree-icon.terminal-fail{background:var(--red)}
+  .otree-icon.terminal-partial{background:var(--amber)}
+  .otree-text{font-size:13px;color:var(--text);flex:1}
+  .otree-text strong{color:var(--navy)}
+  .otree-text em{font-style:italic;color:var(--muted)}
+  .otree-children{margin-left:34px;padding-left:20px;border-left:2px dashed var(--border);margin-top:4px}
+  .otree-children.hidden{display:none}
+
+  /* ===== Original cards view (kept) ===== */
+  .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:18px;padding:14px;background:#fff;border-radius:12px;box-shadow:var(--shadow)}
+  .search{flex:1;min-width:240px;position:relative}
+  .search input{width:100%;padding:10px 14px 10px 38px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13.5px;outline:none;font-family:inherit}
+  .search input:focus{border-color:var(--teal)}
+  .search::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px}
+  .filter-pill{padding:7px 13px;background:#f8fafc;border:1px solid var(--border);border-radius:999px;font-size:12.5px;cursor:pointer;font-weight:500;color:var(--muted);font-family:inherit;transition:all .15s;white-space:nowrap}
+  .filter-pill:hover{border-color:var(--teal);color:var(--teal)}
+  .filter-pill.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+  .section{margin-top:24px}
+  .section-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+  .section-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0}
+  .section h2{font-size:16px;font-weight:700;color:var(--navy)}
+  .section .count{margin-left:auto;font-size:11px;color:var(--muted);background:#eef1f6;padding:3px 9px;border-radius:999px}
+
+  .icon-apertura{background:#0b2545}.icon-tiempo{background:#1f6f8b}.icon-interes{background:#7c3aed}
+  .icon-proveedor{background:#b7791f}.icon-necesidad{background:#0f766e}.icon-precio{background:#c53030}
+  .icon-autoridad{background:#475569}.icon-confianza{background:#9333ea}.icon-tecnico{background:#0369a1}
+  .icon-cierre{background:#15803d}.icon-descubrimiento{background:#d4a017}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--teal);opacity:.7}
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--teal)}
+  .card-quote{font-size:13.5px;font-weight:600;color:var(--text);line-height:1.4;font-style:italic}
+  .card-quote::before{content:"« ";color:var(--teal);font-style:normal;font-weight:700}
+  .card-quote::after{content:" »";color:var(--teal);font-style:normal;font-weight:700}
+  .card-meta{display:flex;justify-content:space-between;align-items:center;margin-top:auto;font-size:11px;color:var(--muted)}
+  .card-tag{background:#eef1f6;padding:3px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .card-arrow{font-size:16px;color:var(--teal);font-weight:700}
+  .diff-easy::before{background:var(--green)}.diff-med::before{background:var(--amber)}.diff-hard::before{background:var(--red)}
+
+  /* ===== Modal (shared) ===== */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(11,37,69,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;backdrop-filter:blur(4px);animation:fade .2s}
+  .modal-backdrop.open{display:flex}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal{background:#fff;border-radius:16px;max-width:760px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:pop .25s cubic-bezier(.2,.9,.3,1.1)}
+  .modal-header{padding:22px 26px 16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--navy) 0%,var(--teal) 140%);color:#fff;border-radius:16px 16px 0 0;position:relative}
+  .modal-category{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-soft);font-weight:700;margin-bottom:6px}
+  .modal-quote{font-size:20px;font-weight:700;line-height:1.3;font-style:italic}
+  .modal-quote::before{content:"« ";color:var(--gold-soft);font-style:normal}
+  .modal-quote::after{content:" »";color:var(--gold-soft);font-style:normal}
+  .modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .modal-close:hover{background:rgba(255,255,255,.3)}
+  .modal-body{padding:22px 26px 26px}
+  .block{margin-bottom:20px}
+  .block:last-child{margin-bottom:0}
+  .block-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--teal);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .block-label .dot{width:6px;height:6px;background:var(--teal);border-radius:50%}
+  .block-content{font-size:14px;color:var(--text);line-height:1.6}
+  .block.warning{background:#fff5f5;border-left:4px solid var(--red);padding:12px 14px;border-radius:6px}
+  .block.warning .block-label{color:var(--red)}
+  .block.warning .block-label .dot{background:var(--red)}
+  .block.success{background:#f0fff4;border-left:4px solid var(--green);padding:12px 14px;border-radius:6px}
+  .block.success .block-label{color:var(--green)}
+  .block.success .block-label .dot{background:var(--green)}
+  .block.tip{background:#fffbeb;border-left:4px solid var(--gold);padding:12px 14px;border-radius:6px}
+  .block.tip .block-label{color:var(--amber)}
+  .block.tip .block-label .dot{background:var(--gold)}
+  .responses{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .response{background:#f8fafc;border:1px solid var(--border);border-left:4px solid var(--teal);padding:11px 14px;border-radius:8px;font-size:13.5px}
+  .response strong{color:var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px}
+  ul.checklist{list-style:none;padding:0}
+  ul.checklist li{padding:5px 0 5px 24px;position:relative;font-size:13.5px}
+  ul.checklist li::before{content:"✓";position:absolute;left:0;top:5px;color:var(--green);font-weight:700;font-size:14px}
+  ul.redflag li::before{content:"⚠";color:var(--red)}
+  .followup{background:linear-gradient(135deg,#fef9c3 0%,#fef3c7 100%);padding:12px 14px;border-radius:8px;border:1px solid var(--gold-soft);font-weight:600;color:var(--navy);font-size:14px}
+  .followup::before{content:"❓ ";font-weight:400}
+
+  footer{text-align:center;padding:20px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);background:#fff}
+  @media (max-width:640px){h1{font-size:22px}.grid{grid-template-columns:1fr}.modal-quote{font-size:17px}}
+  @media print{.toolbar,.view-tabs,.mode-tabs,.persona-grid,.modal-backdrop,.coach{display:none!important}.card,.otree-node{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="breadcrumb">Playbook SDR · Agencia Aduanal</div>
+    <h1>Árbol de Decisiones · Manejo de Llamadas</h1>
+    <p class="subtitle">Guía interactiva por perfil de prospecto. Selecciona con quién estás hablando, sigue el flujo paso a paso, y obtén la respuesta recomendada en cada punto de decisión.</p>
+    <div class="view-tabs">
+      <button class="view-tab active" data-view="flow"><span class="icon">🎯</span>Flujo por Perfil</button>
+      <button class="view-tab" data-view="map"><span class="icon">🗺</span>Mapa Árbol Completo</button>
+      <button class="view-tab" data-view="library"><span class="icon">📚</span>Biblioteca de Tarjetas</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ VIEW 1: FLOW BY PERSONA ============ -->
+  <section class="view active" id="view-flow">
+
+    <div class="persona-grid">
+      <div class="persona-card active" data-p="recepcionista" onclick="selectPersona('recepcionista')">
+        <div class="persona-icon">🛎</div>
+        <h3>Recepcionista</h3>
+        <div class="role">Gatekeeper</div>
+        <div class="desc">El filtro inicial. Su trabajo es proteger el tiempo de los demás. Tu objetivo: pasar el filtro y/o capturar nombre y correo del decisor.</div>
+        <div class="goal">🎯 Meta: Pasar al decisor</div>
+      </div>
+      <div class="persona-card" data-p="gerente" onclick="selectPersona('gerente')">
+        <div class="persona-icon">👨‍💼</div>
+        <h3>Gerente / Coordinador Comex</h3>
+        <div class="role">Influenciador técnico</div>
+        <div class="desc">Vive la operación. Conoce el dolor real (clasificación, despachos, agentes). Suele ser tu mejor aliado o tu mayor objetor por costumbre.</div>
+        <div class="goal">🎯 Meta: Calificar + agendar reunión</div>
+      </div>
+      <div class="persona-card" data-p="dueno" onclick="selectPersona('dueno')">
+        <div class="persona-icon">👔</div>
+        <h3>Dueño / Director General</h3>
+        <div class="role">Decisor final</div>
+        <div class="desc">Estratégico, escaso en tiempo, enfocado en costo y riesgo. No quiere detalles operativos — quiere ROI y confianza. Si te da 2 minutos, son oro.</div>
+        <div class="goal">🎯 Meta: Vender visión + agendar con AE</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="guided" onclick="switchMode('guided')">▶ Modo Guiado</button>
+        <button class="mode-tab" data-mode="map" onclick="switchMode('map')">🗺 Vista Árbol</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted)">Perfil activo: <strong id="active-persona-label" style="color:var(--navy)">Recepcionista</strong></div>
+    </div>
+
+    <!-- GUIDED MODE -->
+    <div id="guided-mode">
+      <div class="conv-shell">
+        <div class="conv-main">
+          <div class="conv-header-row">
+            <div class="conv-title">💬 Simulación de Conversación</div>
+            <div class="conv-actions">
+              <button class="btn" onclick="goBack()" id="back-btn" disabled>← Atrás</button>
+              <button class="btn primary" onclick="restartConversation()">↻ Reiniciar</button>
+            </div>
+          </div>
+          <div class="trail" id="trail"></div>
+          <div class="current-step" id="current-step"></div>
+        </div>
+
+        <aside class="coach" id="coach-panel">
+          <div class="progress-mini" id="progress-mini"></div>
+          <div class="coach-section">
+            <div class="coach-label">💡 Coach en vivo</div>
+            <div class="coach-tip" id="coach-tip">Selecciona un perfil arriba y comienza el flujo. La coachería aparecerá aquí en cada paso.</div>
+          </div>
+          <div class="coach-section" id="redflag-section" style="display:none">
+            <div class="coach-label">⚠ Banderas rojas</div>
+            <ul class="coach-list coach-redflag" id="coach-redflags"></ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- TREE MAP MODE (per-persona) -->
+    <div id="map-mode" style="display:none">
+      <div class="tree-wrap">
+        <div class="tree-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Acción del SDR</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Respuesta del prospecto</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Cierre exitoso</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Salida sin éxito</div>
+          <div style="margin-left:auto;font-size:12px;color:var(--muted)">Click en el botón ▼ para expandir/colapsar nodos</div>
+        </div>
+        <div class="otree" id="otree"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ VIEW 2: GLOBAL MAP ============ -->
+  <section class="view" id="view-map">
+    <div style="background:#fff;padding:20px;border-radius:14px;box-shadow:var(--shadow);margin-bottom:18px">
+      <h2 style="font-size:18px;color:var(--navy);margin-bottom:8px">🗺 Mapa Árbol Completo · Los 3 Perfiles</h2>
+      <p style="font-size:13.5px;color:var(--muted);max-width:780px">Vista expandible de todas las rutas conversacionales para los 3 perfiles. Útil como referencia rápida o para imprimir como manual operativo.</p>
+    </div>
+    <div class="tree-wrap">
+      <div class="tree-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Acción SDR</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Respuesta prospecto</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Cierre exitoso</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Sin éxito</div>
+      </div>
+      <div id="full-map"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 3: CARD LIBRARY ============ -->
+  <section class="view" id="view-library">
+    <div class="toolbar">
+      <div class="search"><input id="searchBox" type="text" placeholder="Buscar: caro, IMMEX, agente, contrato, junta..."></div>
+      <button class="filter-pill active" data-cat="all">Todas</button>
+      <button class="filter-pill" data-cat="apertura">Apertura</button>
+      <button class="filter-pill" data-cat="tiempo">Tiempo</button>
+      <button class="filter-pill" data-cat="interes">Interés</button>
+      <button class="filter-pill" data-cat="proveedor">Proveedor</button>
+      <button class="filter-pill" data-cat="necesidad">Necesidad</button>
+      <button class="filter-pill" data-cat="precio">Precio</button>
+      <button class="filter-pill" data-cat="autoridad">Autoridad</button>
+      <button class="filter-pill" data-cat="confianza">Confianza</button>
+      <button class="filter-pill" data-cat="tecnico">Operativo</button>
+      <button class="filter-pill" data-cat="cierre">Cierre</button>
+      <button class="filter-pill" data-cat="descubrimiento">Discovery</button>
+    </div>
+    <div id="library-content"></div>
+  </section>
+
+</main>
+
+<footer>Playbook interno · Equipo SDR Agencia Aduanal · Imprimible (Ctrl/Cmd + P)</footer>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+/* ============================================================
+   TREE DATA — 3 personas
+   Each node:
+     type: 'sdr' | 'prospect' | 'terminal'
+     For sdr/prospect: text, sample, tip, redflags, branches[]
+     branches[]: { quote (prospect's response), goto (next node id) }
+     For terminal: kind ('success'|'partial'|'fail'), title, message
+   ============================================================ */
+const TREES = {
+  recepcionista:{
+    name:"Recepcionista (Gatekeeper)", icon:"🛎",
+    intro:"Hablas con quien contesta el teléfono. Su rol es filtrar. Tu objetivo es pasar al decisor o, mínimo, capturar nombre y correo directo.",
+    start:"r_open",
+    nodes:{
+      r_open:{
+        type:"sdr",
+        text:"Saludo + solicitud de comunicación",
+        sample:"\"Buenos días. Le habla [Tu Nombre] de [Agencia Aduanal X]. ¿Me podría comunicar con la persona encargada de comercio exterior o despacho aduanal?\"",
+        tip:"Pide por área, no por nombre — suena interno. Tono firme, profesional, ligeramente apurado. NO digas 'es una llamada de ventas'.",
+        redflags:["No abrir con \"¿cómo está usted?\" — quema 5 segundos.","No usar tono dudoso o pedir permiso al recepcionista.","No mentir diciendo que tienes cita si no la tienes."],
+        branches:[
+          {quote:"¿De parte de quién?", goto:"r_who"},
+          {quote:"¿Para qué asunto exactamente?", goto:"r_what"},
+          {quote:"Esa persona no se encuentra / está en junta", goto:"r_absent"},
+          {quote:"No tomamos llamadas comerciales / proveedores", goto:"r_policy"},
+          {quote:"Mándeme correo y yo lo paso", goto:"r_email"},
+          {quote:"Le paso, no cuelgue", goto:"r_pass"}
+        ]
+      },
+      r_who:{
+        type:"sdr",
+        text:"Identifícate con firmeza, sin pedir permiso, y agrega el motivo en una línea técnica",
+        sample:"\"De parte de [Tu Nombre] de [Agencia Y]. Le hablo por un tema operativo de despacho aduanal. ¿Me lo podría pasar por favor?\"",
+        tip:"Decir el motivo en términos técnicos (despacho, clasificación, IMMEX) reduce el filtro porque suena a continuación de algo, no a venta fría.",
+        redflags:["No decir \"para ofrecer un servicio\" — palabras que disparan el filtro.","No revelar todo tu pitch al recepcionista — su trabajo no es evaluar, es filtrar."],
+        branches:[
+          {quote:"¿Tiene cita?", goto:"r_appt"},
+          {quote:"Le paso", goto:"r_pass"},
+          {quote:"Mándeme correo", goto:"r_email"},
+          {quote:"No está disponible", goto:"r_absent"}
+        ]
+      },
+      r_what:{
+        type:"sdr",
+        text:"Da una explicación técnica corta, no un pitch comercial",
+        sample:"\"Es un tema de optimización de despacho aduanero — algo técnico de comercio exterior. La persona que ve eso, ¿es el gerente de logística o cómo le llaman ahí internamente?\"",
+        tip:"Convierte la pregunta en una pregunta de regreso — averiguas el nombre del decisor.",
+        branches:[
+          {quote:"Es [Nombre], déjeme verificar si puede tomarla", goto:"r_verify"},
+          {quote:"Ese tema lo ve [otra área]", goto:"r_reroute"},
+          {quote:"Mándeme correo con detalles", goto:"r_email"}
+        ]
+      },
+      r_absent:{
+        type:"sdr",
+        text:"Pide el horario para volver a marcar Y captura el nombre completo",
+        sample:"\"Entiendo. ¿A qué hora me sugiere marcar para encontrarlo? Y de paso, ¿me confirma su nombre completo? Para no estar preguntando mañana.\"",
+        tip:"La doble pregunta es clave: aunque te diga 'mejor mande correo', ya tienes el nombre.",
+        redflags:["No insistir en pasar a la fuerza si dice que no está.","Apuntar fecha y hora exactas en CRM."],
+        branches:[
+          {quote:"Marque a las 4. Es el Lic. [Nombre]", goto:"r_recall"},
+          {quote:"Mejor mande correo", goto:"r_email"},
+          {quote:"No le doy esa información", goto:"r_blocked"}
+        ]
+      },
+      r_policy:{
+        type:"sdr",
+        text:"Reconoce la política, redirige a algo no-comercial, y pide el dato del decisor",
+        sample:"\"Lo entiendo y respeto la política. Le aclaro: no es venta de producto, es operación aduanal específica que necesito coordinar. Si gusta le mando solo nombre, correo y motivo en una línea — ¿a quién se lo dirijo dentro de comercio exterior?\"",
+        tip:"Posicionarlo como 'coordinación operativa' baja el escudo. Pedir el nombre específico (no genérico) es la verdadera meta.",
+        branches:[
+          {quote:"Mándelo a info@empresa.com", goto:"r_blocked"},
+          {quote:"Está bien, le paso a [persona]", goto:"r_pass"},
+          {quote:"Es [Nombre], su correo es...", goto:"r_namegot"}
+        ]
+      },
+      r_email:{
+        type:"sdr",
+        text:"Acepta el correo, PERO captura nombre y puesto antes de soltar",
+        sample:"\"Perfecto, se lo mando hoy mismo. Para mandárselo a la persona correcta y no al genérico, ¿me regala el nombre y puesto exacto? Y su correo directo, por favor.\"",
+        tip:"NUNCA mandes solo a info@. Si solo te dan el genérico, márcalo como cuenta de baja calidad de gatekeeping.",
+        redflags:["Mandar correo solo a info@ casi nunca llega al decisor.","Si solo te dan correo genérico, prepara campaña de re-marcaje en 3-5 días."],
+        branches:[
+          {quote:"Es [Nombre], gerente de logística, su correo es nombre@...", goto:"r_namegot"},
+          {quote:"Solo mande a info@, ahí lo redirigimos", goto:"r_blocked"},
+          {quote:"Déjeme preguntarle, no cuelgue", goto:"r_pass"}
+        ]
+      },
+      r_appt:{
+        type:"sdr",
+        text:"Sé honesto sobre que no tienes cita pero acota el tiempo",
+        sample:"\"Aún no, justo le marco para coordinarla. Si me lo pasa son 2 minutos, no más. Si no es buen momento, agendamos.\"",
+        tip:"Acotar a 2 minutos baja la fricción enormemente. Promete poco y cumple.",
+        branches:[
+          {quote:"Está en junta, marque más tarde", goto:"r_absent"},
+          {quote:"Le paso, espere", goto:"r_pass"},
+          {quote:"Sin cita no le paso, mande correo", goto:"r_email"}
+        ]
+      },
+      r_verify:{
+        type:"sdr",
+        text:"Espera mientras verifica. Si vuelve con 'no puede ahora', acepta y agenda",
+        sample:"\"Perfecto, espero en línea. Gracias.\"",
+        tip:"En este punto solo escucha. Si vuelve diciendo que sí puede, ¡estás dentro! Si no, ya tienes el nombre y puedes pedir horario.",
+        branches:[
+          {quote:"Sí lo paso, espere", goto:"r_pass"},
+          {quote:"Dice que está ocupado, marque mañana", goto:"r_recall_pre"}
+        ]
+      },
+      r_reroute:{
+        type:"sdr",
+        text:"Acepta la redirección y captura el contacto antes de pedir que te pasen",
+        sample:"\"Perfecto, gracias. Me podría regalar el nombre y correo de esa persona en [área]? Y si me hace el favor de comunicarme con él(la), le agradezco.\"",
+        tip:"Redirigir es bueno — es un nombre nuevo. Captúralo SIEMPRE antes de pedir transferencia.",
+        branches:[
+          {quote:"Es [Nombre], le paso ahora", goto:"r_pass"},
+          {quote:"Es [Nombre], pero hoy no está", goto:"r_namegot"}
+        ]
+      },
+      r_recall_pre:{
+        type:"sdr",
+        text:"Cierra el horario específico y confirma el nombre",
+        sample:"\"Entendido. ¿A qué hora exacta me sugiere marcarle mañana? Y confírmeme su nombre completo para preguntar por él directamente.\"",
+        tip:"Sé específico con la hora — 'mañana en la tarde' no sirve. 'Mañana 11:30 am' sí.",
+        branches:[
+          {quote:"Marque mañana a las 11. Es [Nombre]", goto:"r_recall"},
+          {quote:"Mejor mande correo", goto:"r_email"}
+        ]
+      },
+      /* TERMINALES */
+      r_pass:{
+        type:"terminal", kind:"success",
+        title:"✓ Pasaste el filtro — estás con el decisor",
+        message:"Excelente. Ahora cambia inmediatamente al árbol de GERENTE COMEX (o de DUEÑO si te lo pasaron arriba). Tu apertura debe ser rápida, con permiso, y un pitch de 30 segundos.",
+        nextPersona:"gerente"
+      },
+      r_namegot:{
+        type:"terminal", kind:"success",
+        title:"✓ Capturaste nombre y correo del decisor",
+        message:"Buen trabajo. Acciones inmediatas: 1) Mandar correo personalizado HOY mismo (referencia el nombre del recepcionista que te lo pasó). 2) Programar re-marcaje en CRM para 2-3 días después. 3) Conectar en LinkedIn con nota personalizada."
+      },
+      r_recall:{
+        type:"terminal", kind:"success",
+        title:"✓ Tienes nombre + horario para volver a marcar",
+        message:"Cuando vuelvas a marcar: pregunta directamente por el nombre. Eso te salta el filtro 'frío' y entras como continuación de algo programado."
+      },
+      r_blocked:{
+        type:"terminal", kind:"partial",
+        title:"⚠ Solo correo genérico (info@)",
+        message:"Probabilidad de que llegue al decisor: baja. Acciones: 1) Mandar correo de todos modos con asunto técnico (\"Re: Optimización despacho aduanal\"). 2) Buscar en LinkedIn al gerente de comex/logística de la empresa. 3) Re-marcar en 3 días con otro horario y otro pretexto."
+      }
+    }
+  },
+
+  gerente:{
+    name:"Gerente / Coordinador Comex", icon:"👨‍💼",
+    intro:"Ya tienes al decisor técnico en la línea. Tu objetivo: hacer apertura permission-based, pitch de 30s, calificar dolor, y agendar reunión con AE.",
+    start:"g_open",
+    nodes:{
+      g_open:{
+        type:"sdr",
+        text:"Apertura honesta con permiso",
+        sample:"\"Hola [Nombre], le habla [Tu nombre] de [Agencia X]. Le voy a ser totalmente honesto: esta es una llamada planeada, no acordada. ¿Me da 27 segundos para explicarle por qué creí valía la pena marcarle, y al final usted decide si seguimos?\"",
+        tip:"La honestidad radical desarma — el cliente espera el guion vendedor. Decir un número específico (27 segundos) suena medido y serio.",
+        redflags:["No usar \"¿cómo está hoy?\" — reflejo de spam.","No leer guion monótono — escucha desde el segundo 1."],
+        branches:[
+          {quote:"Adelante, te escucho", goto:"g_pitch"},
+          {quote:"Estoy ocupado / no es buen momento", goto:"g_busy"},
+          {quote:"Mira, ya tengo agente y estoy contento", goto:"g_incumbent"},
+          {quote:"Mándame info por correo", goto:"g_email"},
+          {quote:"No me interesa, gracias", goto:"g_nointerest"},
+          {quote:"¿De dónde sacaste mi número?", goto:"g_source"}
+        ]
+      },
+      g_pitch:{
+        type:"sdr",
+        text:"Pitch en 30 segundos, estructura: para quién + dolor + valor + métrica",
+        sample:"\"Trabajamos con importadores que mueven entre 20 y 200 pedimentos al mes y que están perdiendo tiempo y dinero por reclasificaciones, demoras en patio fiscal, o glosas inesperadas del SAT. Lo que hacemos es prevenir eso antes de que el contenedor toque puerto. Empresas como [referencia] redujeron tiempos de despacho 40% en 90 días. ¿Cuál de esos dolores resuena con lo que ustedes viven hoy?\"",
+        tip:"Termina SIEMPRE con pregunta abierta. El pitch sin pregunta es monólogo — el cliente se desconecta.",
+        branches:[
+          {quote:"Sí, justo tenemos problemas con [X]", goto:"g_pain_yes"},
+          {quote:"No, ninguno de esos nos pasa", goto:"g_no_pain"},
+          {quote:"Está interesante, cuéntame más", goto:"g_more"},
+          {quote:"Suena bien pero ¿cuánto cobran?", goto:"g_price"}
+        ]
+      },
+      g_busy:{
+        type:"sdr",
+        text:"Valida + acota tiempo + propone reagendar con dos opciones concretas",
+        sample:"\"Lo entiendo perfecto, sé que su tiempo vale. ¿Le funciona si le marco mañana a las 10 o prefiere a las 4? Solo necesito 7 minutos para validar si lo que tenemos aplica a su operación.\"",
+        tip:"Siempre cierra con dos horas, nunca con \"¿cuándo le marco?\". El \"¿cuándo?\" abre escape; las dos opciones cierran.",
+        branches:[
+          {quote:"Mañana a las 10 está bien", goto:"g_appt_set"},
+          {quote:"Esta semana imposible", goto:"g_busy_hard"},
+          {quote:"Mejor mándame info", goto:"g_email"}
+        ]
+      },
+      g_incumbent:{
+        type:"sdr",
+        text:"Valida (no atacas al actual) + planta semilla del segundo agente",
+        sample:"\"Me parece excelente que estén bien con su agente — eso habla bien. No le pido que cambien. Pero las operaciones serias suelen tener un segundo agente declarado en VUCEM como respaldo, ya sea para aduanas que su actual no cubre, opinar en clasificaciones complejas, o no quedarse sin operar si pasa algo. ¿Hoy tienen ese respaldo?\"",
+        tip:"NUNCA hablar mal del agente actual — comunidad chica, se sabe. Posicionarse como 'segundo agente / respaldo' baja la barrera enormemente.",
+        redflags:["NO mencionar el nombre del agente actual aunque lo conozcas.","NO ofrecer 'romper contrato' como gancho.","La estrategia es entrar como #2 y crecer."],
+        branches:[
+          {quote:"No, solo trabajamos con uno", goto:"g_only_one"},
+          {quote:"Sí, tenemos dos ya", goto:"g_already_two"},
+          {quote:"Tenemos contrato vigente, no podemos cambiar", goto:"g_contract"},
+          {quote:"Mi agente es familiar/amigo de años", goto:"g_family"}
+        ]
+      },
+      g_email:{
+        type:"sdr",
+        text:"Condiciona el envío a una mini-discovery — para mandar algo específico, no genérico",
+        sample:"\"Con gusto le mando información, pero le pido un favor: para no mandarle un PDF genérico que se pierda en su bandeja, ¿me regala 90 segundos para preguntarle 2 cosas y mandarle algo específico para su operación? Así sí lo lee.\"",
+        tip:"\"Mándame correo\" es el brush-off #1. Si lo aceptas pasivamente, perdiste. Convertirlo en 90 segundos de discovery te salva la cuenta.",
+        branches:[
+          {quote:"Está bien, dale, dos preguntas", goto:"g_qual_quick"},
+          {quote:"No, mejor solo mándame el PDF", goto:"g_email_only"},
+          {quote:"Te lo agradezco, sin compromiso", goto:"g_qual_quick"}
+        ]
+      },
+      g_nointerest:{
+        type:"sdr",
+        text:"Acepta + redirige con curiosidad para entender por qué",
+        sample:"\"Entiendo. Solo por curiosidad, ¿no le interesa porque ya tienen agente, porque no es su área, o porque la llamada le cayó en mal momento? Le pregunto para no molestar si no podemos aportar.\"",
+        tip:"La pregunta de tres opciones obliga a una respuesta más específica que abre la puerta.",
+        branches:[
+          {quote:"Ya tenemos agente", goto:"g_incumbent"},
+          {quote:"No es mi área", goto:"g_not_area"},
+          {quote:"Realmente no, gracias", goto:"g_drop"}
+        ]
+      },
+      g_source:{
+        type:"sdr",
+        text:"Honestidad total + valida que es prospección legítima",
+        sample:"\"Justa pregunta. Lo conseguí en [LinkedIn / directorio empresarial / referido de X / base pública]. Trabajamos con empresas de su sector y vi que [empresa] importa [tipo], por eso le marqué específicamente. ¿Eso aplica a ustedes?\"",
+        tip:"Nunca mentir sobre la fuente. Si no quieres decirlo, es señal de que no deberías estar haciendo esa llamada.",
+        branches:[
+          {quote:"Está bien, ¿qué necesitas?", goto:"g_pitch"},
+          {quote:"Por favor sácame de tu lista", goto:"g_drop"}
+        ]
+      },
+      g_pain_yes:{
+        type:"sdr",
+        text:"¡Ganaste atención! Ahora profundiza con preguntas de discovery",
+        sample:"\"Cuénteme más. ¿Con qué frecuencia les pasa? ¿Cuál fue el último incidente concreto? ¿Cuánto les costó en tiempo o dinero? Le pregunto para entender el tamaño real del problema antes de proponer cómo lo atacamos.\"",
+        tip:"Aquí escuchas 80% / hablas 20%. Toma notas. Cada dato es munición para el AE.",
+        branches:[
+          {quote:"Nos pasa cada [X], el último fue...", goto:"g_qual_deep"},
+          {quote:"Es algo recurrente pero no medimos", goto:"g_qual_deep"}
+        ]
+      },
+      g_no_pain:{
+        type:"sdr",
+        text:"Replantea con preguntas más amplias — el dolor está pero no se nombra así",
+        sample:"\"Qué bueno escuchar eso. ¿Y en términos generales — visibilidad en línea de pedimentos, control de tiempos por aduana, comparativos de costos por operación — cómo lo manejan hoy? A veces el dolor no es ruido fuerte sino oportunidad invisible.\"",
+        tip:"Cliente que dice 'no tenemos problemas' suele decir 'no medimos lo suficiente'. Las preguntas de visibilidad sacan eso.",
+        branches:[
+          {quote:"Pues no tenemos sistema en línea, lo hacemos manual", goto:"g_pain_yes"},
+          {quote:"Todo bien, gracias", goto:"g_no_pain_hard"}
+        ]
+      },
+      g_more:{
+        type:"sdr",
+        text:"Reto suave con caso concreto + pregunta calificadora",
+        sample:"\"Le doy caso real: cliente similar al suyo movía 80 pedimentos al mes con 12% de glosas — promedio era una multa cada 2 meses. En 6 meses bajamos glosas a 2% y ahorramos en multas el equivalente a 9 meses de honorarios. ¿Sus glosas/multas están en niveles parecidos?\"",
+        tip:"Casos con números específicos generan credibilidad. Genéricos no.",
+        branches:[
+          {quote:"Sí, tenemos varias glosas al año", goto:"g_qual_deep"},
+          {quote:"Las nuestras son menos pero pasan", goto:"g_qual_deep"},
+          {quote:"Realmente no tenemos glosas", goto:"g_no_pain"}
+        ]
+      },
+      g_price:{
+        type:"sdr",
+        text:"No cotices a ciegas — convierte la pregunta en discovery + agenda",
+        sample:"\"Buena pregunta — quiero darle número real, no rango general. Para eso necesito conocer su operación: tipo de mercancía, aduanas, IMMEX o no, volumen mensual. ¿Le parece si agendamos 20 minutos esta semana, vemos un par de pedimentos suyos, y le mando cotización seria al día siguiente?\"",
+        tip:"Cotizar a ciegas siempre pierde — o quedas caro o te usan de comparativo barato.",
+        branches:[
+          {quote:"Dale, agendemos", goto:"g_appt_set"},
+          {quote:"Mejor mándame rangos generales", goto:"g_email"},
+          {quote:"Solo mándame cotización por correo", goto:"g_quote_blind"}
+        ]
+      },
+      g_only_one:{
+        type:"sdr",
+        text:"Pinta riesgo de continuidad operativa + propone respaldo sin compromiso",
+        sample:"\"Es lo más común y también el riesgo más subestimado. Si su agente se enferma, tiene un problema de sistema, o pierden a su ejecutivo asignado, ¿quién mueve sus contenedores ese día? Le ofrezco: nos quedamos como agente alterno declarado en VUCEM, sin tocar su operación regular. Solo entran si nos necesitan. ¿Le hace sentido tener ese seguro?\"",
+        tip:"Posición de 'seguro de continuidad' es mucho más fácil de aceptar que 'cambio de agente'.",
+        branches:[
+          {quote:"Eso sí me hace sentido, cuéntame cómo", goto:"g_qual_deep"},
+          {quote:"Suena bien pero ahora no", goto:"g_appt_set"},
+          {quote:"No, estoy bien con uno", goto:"g_drop"}
+        ]
+      },
+      g_already_two:{
+        type:"sdr",
+        text:"Calificar si hay espacio para tercero / si el segundo es realmente activo",
+        sample:"\"Perfecto, eso muestra madurez operativa. Una pregunta: ¿el segundo es activo o es solo declarado en VUCEM por requisito? Le pregunto porque a veces hay aduanas o tipos de mercancía donde ninguno de los dos es fuerte y ahí sí valdría una opción adicional.\"",
+        tip:"Buscar la grieta — aduana o producto donde sus dos actuales son débiles.",
+        branches:[
+          {quote:"El segundo es activo, ambos trabajan", goto:"g_drop_polite"},
+          {quote:"El segundo es solo declarado", goto:"g_qual_deep"},
+          {quote:"Hay aduanas donde batallamos", goto:"g_qual_deep"}
+        ]
+      },
+      g_contract:{
+        type:"sdr",
+        text:"Calificar el contrato + capturar fecha de vencimiento + ofrecer coexistencia",
+        sample:"\"Lo escucho. ¿Es contrato exclusivo con cláusula de penalización, o es carta-encomienda que se puede ampliar? Y, ¿en qué fecha aproximada vence? Le pregunto para hacer el seguimiento 60 días antes y darle tiempo de evaluar opciones sin presión.\"",
+        tip:"La mayoría de carta-encomiendas NO son exclusivas. Y siempre vale capturar fecha de vencimiento — es el mejor gancho para volver.",
+        branches:[
+          {quote:"Vence en [fecha], es carta-encomienda", goto:"g_appt_set"},
+          {quote:"Es contrato exclusivo de 3 años", goto:"g_long_contract"},
+          {quote:"No sé los detalles, lo ve mi jefe", goto:"g_authority"}
+        ]
+      },
+      g_family:{
+        type:"sdr",
+        text:"Respeto absoluto + ofrecerse como recurso técnico independiente, sin presión",
+        sample:"\"Lo entiendo y lo respeto al 100% — esas relaciones son lo más valioso. No vengo a competir contra eso. Solo le ofrezco ser su segundo par de ojos: cuando tengan una clasificación dudosa o necesiten una opinión técnica independiente, puede llamarme sin compromiso. ¿Le parece útil tener ese recurso?\"",
+        tip:"Esta cuenta es de baja conversión — invierte tiempo limitado. Pero el cliente recordará el respeto.",
+        branches:[
+          {quote:"Está bien, dame tu contacto", goto:"g_namegot"},
+          {quote:"No es necesario, gracias", goto:"g_drop_polite"}
+        ]
+      },
+      g_qual_deep:{
+        type:"sdr",
+        text:"Discovery profunda — preguntas BANT/MEDDIC del sector aduanal",
+        sample:"\"Para preparar la junta con [Nombre AE], me ayudaría saber: ¿cuántas operaciones al mes mueven? ¿Por qué aduanas principales? ¿Qué tipo de mercancías? ¿Régimen general, IMMEX, PROSEC? ¿Quién decide cambios de agente — usted, finanzas, dirección? ¿Cuándo evalúan formalmente proveedores?\"",
+        tip:"Preguntas pueden parecer muchas — divídelas. Cada respuesta es información de oro para handoff a AE.",
+        branches:[
+          {quote:"[Cliente da datos] — Agendemos junta", goto:"g_appt_set"},
+          {quote:"Esa información necesito consultarla", goto:"g_send_followup"}
+        ]
+      },
+      g_qual_quick:{
+        type:"sdr",
+        text:"Mini-discovery: 2-3 preguntas para personalizar el correo",
+        sample:"\"Excelente. Solo dos cosas: (1) ¿qué tipo de mercancía mueven principalmente y por qué aduana? (2) ¿Cuál es su mayor dolor hoy con su operación de comercio exterior — tiempos, costos, errores, comunicación con su agente?\"",
+        tip:"Con esas 2 respuestas armas correo personalizado que SÍ se lee.",
+        branches:[
+          {quote:"[Da los datos]", goto:"g_namegot"},
+          {quote:"Mejor mándame algo general", goto:"g_email_only"}
+        ]
+      },
+      g_authority:{
+        type:"sdr",
+        text:"Mapea estructura + recluta al gerente como champion interno",
+        sample:"\"Lo entiendo. Igual su opinión vale mucho porque usted vive la operación. ¿Le gustaría que primero nos sentemos los dos rápido — sin compromiso — para que usted vea si vale la pena que conozca a su jefe? Así llega usted recomendándolo, no yo cayendo en frío.\"",
+        tip:"Reclutar al gerente como aliado es más efectivo que saltarlo.",
+        branches:[
+          {quote:"Sí, hagamos eso primero", goto:"g_appt_set"},
+          {quote:"Mejor habla directo con mi jefe", goto:"g_get_boss"},
+          {quote:"No tiene caso, no va a aceptar", goto:"g_send_followup"}
+        ]
+      },
+      g_get_boss:{
+        type:"sdr",
+        text:"Captura nombre, correo, e idealmente pide intro warm",
+        sample:"\"Perfecto, le agradezco. ¿Me podría compartir nombre y correo de su jefe? Y, si me hace el favor de mandarle un correo corto presentándome (yo le mando un texto listo para reenviar), me ahorra 3 semanas de prospección.\"",
+        tip:"Intro warm vía champion convierte 5x más que llamada fría al jefe.",
+        branches:[
+          {quote:"Es [Nombre], le mando intro", goto:"g_namegot"},
+          {quote:"Te paso el contacto, márcale tú", goto:"g_namegot"}
+        ]
+      },
+      /* Terminales */
+      g_appt_set:{
+        type:"terminal", kind:"success",
+        title:"✓ Reunión agendada con AE / cierre",
+        message:"Acciones: 1) Mandar invitación de calendario en menos de 5 min. 2) Confirmar 24h antes con mensaje breve. 3) Handoff completo a AE: contexto, dolor identificado, objeciones manejadas, asistentes confirmados. 4) Si pediste pedimentos previos — recolectar antes de la junta."
+      },
+      g_namegot:{
+        type:"terminal", kind:"success",
+        title:"✓ Información valiosa capturada",
+        message:"Tienes contacto del decisor o datos de calificación. Acciones: mandar correo personalizado HOY (referencia el contexto de la conversación), agregar al CRM con etiqueta correcta, programar follow-up en 3-5 días."
+      },
+      g_send_followup:{
+        type:"terminal", kind:"partial",
+        title:"📧 Mandar correo + nurture programado",
+        message:"Manda correo con contenido específico al dolor identificado (no PDF genérico). Programa secuencia de nurture: contenido útil cada 2-3 semanas. Re-marca en 6 semanas con nuevo ángulo."
+      },
+      g_email_only:{
+        type:"terminal", kind:"partial",
+        title:"📧 Correo solamente — baja prioridad",
+        message:"Manda PDF + correo personalizado. Etiquetar como nurture a 60-90 días. Buscar trigger event para re-acercarse (cambios regulatorios, expansión, contrato venciendo)."
+      },
+      g_drop:{
+        type:"terminal", kind:"fail",
+        title:"✗ Cuenta no convertida hoy",
+        message:"Agradece, despídete con dignidad, y deja la puerta abierta: \"Le dejo mi contacto. Si en algún momento necesitan segunda opinión, marquen sin compromiso.\" Re-evaluar la cuenta en 6-12 meses con nuevo trigger."
+      },
+      g_drop_polite:{
+        type:"terminal", kind:"partial",
+        title:"⚠ Cuenta cerrada por el momento",
+        message:"Probabilidad baja-media. Mantener en CRM con re-marcaje anual. Conectar en LinkedIn. Mandar boletín trimestral con cambios regulatorios."
+      },
+      g_long_contract:{
+        type:"terminal", kind:"partial",
+        title:"⏳ Contrato largo vigente — nurture",
+        message:"Contrato exclusivo a años. Acciones: 1) Capturar fecha exacta de vencimiento. 2) Programar re-marcaje 6 meses antes. 3) Boletín mensual mientras tanto. 4) Buscar el dolor que justifique romper contrato (raro pero ocurre)."
+      },
+      g_no_pain_hard:{
+        type:"terminal", kind:"partial",
+        title:"⚠ Sin dolor activo — nurture largo plazo",
+        message:"No hay urgencia. Acciones: dejarse en radar con boletines, marcar como 'low priority nurture'. Re-marcar en 4-6 meses con un trigger nuevo (cambio regulatorio, caso de éxito de su industria)."
+      },
+      g_busy_hard:{
+        type:"terminal", kind:"partial",
+        title:"⏰ Cliente saturado — agenda al futuro",
+        message:"Si rebota dos veces el agendado, no insistas hoy. Manda correo con propuesta de calendario para 3 semanas adelante. Si no responde, re-marcar en 3 meses."
+      },
+      g_quote_blind:{
+        type:"terminal", kind:"fail",
+        title:"✗ NO mandes cotización ciega",
+        message:"Cotizar sin discovery casi siempre pierde. Última opción: manda rangos generales con fuerte llamado a agendar antes de cotizar específico. Si insiste solo en número — probablemente solo te usa de comparativo."
+      },
+      g_not_area:{
+        type:"terminal", kind:"partial",
+        title:"➡ Redirección a otra persona",
+        message:"Pide nombre, correo, y si es posible, intro warm. Captúralo en CRM como nuevo lead, no descartar el contacto original — puede volverse champion futuro."
+      }
+    }
+  },
+
+  dueno:{
+    name:"Dueño / Director General", icon:"👔",
+    intro:"Tienes al jefe. Su tiempo es escaso, su lente es ROI y riesgo. NO uses lenguaje técnico. Sé directo, ejecutivo, y enfócate en valor estratégico.",
+    start:"d_open",
+    nodes:{
+      d_open:{
+        type:"sdr",
+        text:"Apertura ejecutiva: directa, respetuosa del tiempo, con valor inmediato",
+        sample:"\"Buenos días [Nombre]. Le habla [Tu nombre] de [Agencia X]. Le marco directo porque me dijeron que las decisiones operativas grandes pasan por usted. ¿Me da 90 segundos para una propuesta concreta o prefiere que le marque otro momento?\"",
+        tip:"Dueños odian rodeos. Sé directo, valida su autoridad, ofrece salida inmediata. La frase 'propuesta concreta' enciende interés.",
+        redflags:["No usar tono asustadizo o rebajado.","No mencionar precios bajos o descuentos en apertura — devalúa.","No vender producto, vender resultado/riesgo evitado."],
+        branches:[
+          {quote:"Adelante, dime", goto:"d_pitch"},
+          {quote:"Eso lo ve mi gente, marca con [persona]", goto:"d_delegate"},
+          {quote:"No tengo tiempo, sé breve", goto:"d_short"},
+          {quote:"Conozco bien a mi agente, llevamos años", goto:"d_loyal"},
+          {quote:"¿Cuánto me ahorras?", goto:"d_roi"}
+        ]
+      },
+      d_pitch:{
+        type:"sdr",
+        text:"Pitch ejecutivo de 60 segundos: dolor estratégico + valor + diferencial + pregunta de cierre",
+        sample:"\"Las empresas importadoras pierden entre 3% y 7% de su margen anual en errores aduanales no detectados — clasificaciones equivocadas, glosas evitables, multas por extemporaneidad, y sobrecostos por almacenajes. Nosotros hacemos auditoría preventiva más despacho operativo, y bajamos eso a menos del 1%. La pregunta para usted: ¿hoy tienen visibilidad real de cuánto les cuesta el ruido aduanal al año?\"",
+        tip:"Habla de margen, no de honorarios. Habla de riesgo evitado, no de servicio prestado. Esa es la frecuencia del dueño.",
+        branches:[
+          {quote:"No, la verdad no medimos eso", goto:"d_no_visibility"},
+          {quote:"Sí lo medimos, no es tan grave", goto:"d_measured"},
+          {quote:"¿Tienen casos de empresas como la mía?", goto:"d_proof"},
+          {quote:"Suena interesante, mándame propuesta", goto:"d_proposal"}
+        ]
+      },
+      d_delegate:{
+        type:"sdr",
+        text:"Acepta delegación PERO captura el respaldo del dueño primero — pesa muchísimo en jerarquía",
+        sample:"\"Por supuesto, gracias por orientarme. Antes de marcar a [persona], ¿me autoriza mencionar que usted me sugirió la conversación? Eso me abre la puerta y a [persona] le dice que es prioridad. Y, para que no le caiga frío, ¿me ayuda con su correo para ponerlo en copia?\"",
+        tip:"Bajar con autorización del dueño es 10x más efectivo que llamada fría al gerente. SIEMPRE pedir permiso de mencionarlo.",
+        branches:[
+          {quote:"Sí, dile que yo te mandé", goto:"d_warm_intro"},
+          {quote:"Mejor habla con él directo, sin mencionarme", goto:"d_namegot"},
+          {quote:"Yo le mando un correo presentándote", goto:"d_warm_intro"}
+        ]
+      },
+      d_short:{
+        type:"sdr",
+        text:"Acota a 30 segundos máximo + entrega valor concreto",
+        sample:"\"Treinta segundos: trabajamos con importadores como ustedes para reducir glosas, prevenir multas, y bajar tiempos de despacho. Empresas similares ahorran promedio 4% de su costo logístico anual. Si le hace sentido escuchar 5 minutos más, agendamos. Si no, ahí lo dejamos.\"",
+        tip:"Para dueños apurados, ofrecer 'salida' es muestra de respeto que ellos premian con apertura.",
+        branches:[
+          {quote:"Suena bien, agendemos 15 minutos", goto:"d_appt"},
+          {quote:"Mándame info por correo", goto:"d_email"},
+          {quote:"Por ahora paso, gracias", goto:"d_drop"}
+        ]
+      },
+      d_loyal:{
+        type:"sdr",
+        text:"Respeto a la lealtad + ofrecer rol estratégico distinto, no competencia",
+        sample:"\"Le creo absolutamente, y eso habla bien de su agente. No vengo a competir contra años de relación. Lo que sí ofrezco es lo que muchos directores en su posición han adoptado: una auditoría externa anual independiente — alguien que NO sea su agente — para detectar exposiciones de SAT y cuantificar lo que su operación está dejando sobre la mesa. Sin tocar al actual. ¿Eso le interesaría explorar?\"",
+        tip:"'Auditoría independiente' es servicio premium que dueños valoran porque les da control sin disrupción operativa.",
+        branches:[
+          {quote:"Eso sí me interesa, cuéntame", goto:"d_audit_path"},
+          {quote:"Mi gente ya hace eso", goto:"d_internal_audit"},
+          {quote:"No, gracias, estamos bien", goto:"d_drop"}
+        ]
+      },
+      d_roi:{
+        type:"sdr",
+        text:"Convertir en discovery sin prometer cifras a ciegas",
+        sample:"\"Buena pregunta — y le voy a ser honesto: cualquier número que le diga ahora sin ver su operación es teatro. Lo que sí puedo prometer: si me da acceso a 3-5 pedimentos de los últimos 6 meses, le entrego en 7 días un análisis cuantificado de oportunidad — gratis, sin compromiso. Si la oportunidad existe, hablamos. Si no, le devuelvo su tiempo. ¿Le hace sentido?\"",
+        tip:"Análisis gratis es la oferta más fácil de aceptar para un dueño. Bajo riesgo, alta señal de profesionalismo.",
+        branches:[
+          {quote:"Dale, hagamos ese análisis", goto:"d_appt"},
+          {quote:"Primero mándame propuesta general", goto:"d_proposal"},
+          {quote:"No, sin compromiso ni análisis", goto:"d_drop"}
+        ]
+      },
+      d_no_visibility:{
+        type:"sdr",
+        text:"Reto suave + propuesta de cuantificar ese costo invisible",
+        sample:"\"Es exactamente el patrón que vemos. Cuando no se mide, se asume que es chico — y casi siempre resulta más grande. Le ofrezco: en 7 días, con 3-5 pedimentos suyos, le entregamos un análisis con cifras concretas de su exposición. Sin costo. Si las cifras son chicas, pierdo yo el tiempo. Si son significativas, hablamos. ¿Le agendo el envío de la información?\"",
+        tip:"Plantear como 'su tiempo es seguro, mi tiempo es el que arriesgo' es muy efectivo con dueños.",
+        branches:[
+          {quote:"Está bien, manda info", goto:"d_appt"},
+          {quote:"Habla con mi gente para coordinar", goto:"d_warm_intro"},
+          {quote:"No, prefiero no compartir pedimentos", goto:"d_alt_qual"}
+        ]
+      },
+      d_measured:{
+        type:"sdr",
+        text:"Reconocer + cuestionar el benchmark sin agresividad",
+        sample:"\"Excelente que lo midan — eso es señal de operación seria. Mi pregunta: ¿lo comparan contra benchmarks externos de su industria? A veces lo que parece 'no tan grave' es 2-3x peor que lo que están haciendo competidores directos. Le ofrezco un benchmark anónimo de su sector, sin compromiso.\"",
+        tip:"Dueños responden a benchmarks de competencia — mueve su instinto competitivo.",
+        branches:[
+          {quote:"Eso me interesa, cuándo me lo mandas", goto:"d_appt"},
+          {quote:"Mi gente lo evalúa, conéctate con ellos", goto:"d_warm_intro"},
+          {quote:"No es necesario, gracias", goto:"d_drop"}
+        ]
+      },
+      d_proof:{
+        type:"sdr",
+        text:"Casos concretos con métricas + ofrecer referencia directa",
+        sample:"\"Sí. Caso reciente: empresa de [industria similar] que importaba [tipo de mercancía], movía [volumen] al mes. Identificamos 8% de sus pedimentos con clasificación reclasificable a fracción más eficiente. Ahorro anual: $[cantidad] USD. Le puedo mandar el caso por escrito y, si quiere, le doy contacto del director de esa empresa para que valide.\"",
+        tip:"Tener 2-3 casos por industria con cifras y referencias autorizadas es indispensable. Sin eso, los dueños no se mueven.",
+        branches:[
+          {quote:"Mándame caso y contacto", goto:"d_appt"},
+          {quote:"Mejor agendemos llamada", goto:"d_appt"},
+          {quote:"Es interesante pero no aplica a nosotros", goto:"d_diff_industry"}
+        ]
+      },
+      d_proposal:{
+        type:"sdr",
+        text:"Acepta mandar propuesta PERO califica para personalizarla + agenda follow-up",
+        sample:"\"Con gusto. Para mandarle propuesta seria y no genérica, ¿me ayuda con 3 datos rápidos? (1) Volumen mensual aproximado de operaciones, (2) aduanas principales, (3) tipo de mercancía dominante. Y le agendo 20 min la próxima semana para revisarla juntos.\"",
+        tip:"Toda propuesta enviada DEBE tener follow-up agendado en el mismo correo. Si no, se pierde.",
+        branches:[
+          {quote:"Aquí van los datos, agenda con [persona]", goto:"d_appt"},
+          {quote:"Solo mándame algo general", goto:"d_email"},
+          {quote:"Después de revisarla yo te aviso", goto:"d_proposal_blind"}
+        ]
+      },
+      d_audit_path:{
+        type:"sdr",
+        text:"Detallar el alcance de la auditoría independiente + agendar exploratorio",
+        sample:"\"Perfecto. La auditoría revisa: clasificaciones arancelarias de los últimos 12 meses, cumplimiento de regímenes (IMMEX, PROSEC, etc.), exposición a glosas/multas, y eficiencia de costos comparada contra benchmark. Toma 3 semanas. Le agendo 30 min con nuestro director técnico para diseñar el alcance específico a su operación. ¿Le funciona [fecha]?\"",
+        tip:"Mientras más concreto el entregable, más fácil cierras. Vaguedad mata.",
+        branches:[
+          {quote:"Sí, agendemos", goto:"d_appt"},
+          {quote:"Primero mándame propuesta", goto:"d_proposal"}
+        ]
+      },
+      d_internal_audit:{
+        type:"sdr",
+        text:"Validar + diferenciar entre auditoría interna y externa independiente",
+        sample:"\"Eso es muy buena práctica. Pregunta clave: ¿la auditoría interna la hace alguien independiente del agente actual? Porque la mayoría de los hallazgos importantes solo aparecen cuando el auditor NO depende del agente. Le ofrezco un segundo par de ojos que solo trabaja para usted.\"",
+        tip:"Independencia es palabra clave para dueños — la entienden inmediatamente.",
+        branches:[
+          {quote:"Tiene sentido, hablemos", goto:"d_appt"},
+          {quote:"La hace mi gente, está bien así", goto:"d_drop_polite"}
+        ]
+      },
+      d_alt_qual:{
+        type:"sdr",
+        text:"Respetar confidencialidad + ofrecer alternativa de calificación",
+        sample:"\"Lo entiendo, los pedimentos son sensibles. Alternativa: sin pedimentos, en una llamada de 30 minutos puedo hacerle 6 preguntas calificadoras y darle estimación de orden de magnitud. Si le hace sentido, profundizamos. Si no, no le quito más tiempo.\"",
+        tip:"Siempre ten plan B que no requiera info sensible. Genera confianza.",
+        branches:[
+          {quote:"Está bien, agendemos", goto:"d_appt"},
+          {quote:"No, mejor déjalo", goto:"d_drop"}
+        ]
+      },
+      d_warm_intro:{
+        type:"sdr",
+        text:"Capturar nombre/correo + pedir intro escrita del dueño",
+        sample:"\"Perfecto, le agradezco enormemente. ¿Me regala el nombre y correo de [persona]? Y si me hace el favor, le mando un texto corto que usted puede reenviarle directo, dura 30 segundos. Eso me ahorra 3 semanas y le asegura a usted que la conversación llega al nivel correcto.\"",
+        tip:"Intro warm desde el dueño es el regalo más valioso que un SDR puede recibir.",
+        branches:[
+          {quote:"Perfecto, mándame el texto", goto:"d_namegot"},
+          {quote:"Es [Nombre], yo le aviso que esperas su llamada", goto:"d_namegot"}
+        ]
+      },
+      /* Terminales */
+      d_appt:{
+        type:"terminal", kind:"success",
+        title:"✓ Reunión agendada con dueño / decisor",
+        message:"Trato VIP. Acciones: 1) Invitación enviada en menos de 5 min con agenda específica de la junta. 2) Confirmación 24h antes. 3) AE y/o socio de la agencia debe asistir personalmente — no junior. 4) Llevar análisis preliminar o caso de industria. 5) Limitar junta estricta a tiempo prometido."
+      },
+      d_namegot:{
+        type:"terminal", kind:"success",
+        title:"✓ Intro warm del dueño + contacto del gerente",
+        message:"Oro puro. Acciones: 1) Mandar texto de intro al dueño en menos de 1 hora para que reenvíe. 2) Marcar al gerente al día siguiente mencionando al dueño. 3) Tratar al gerente con respeto extra — el dueño le dijo. 4) Cerrar al gerente esta semana o explicar al dueño por qué no se cerró."
+      },
+      d_email:{
+        type:"terminal", kind:"partial",
+        title:"📧 Correo ejecutivo + nurture",
+        message:"Manda correo CORTO (5 líneas máximo) con propuesta de valor estratégica, no técnica. Adjunta 1 caso de éxito de su industria. Programa follow-up llamada en 5 días."
+      },
+      d_drop:{
+        type:"terminal", kind:"fail",
+        title:"✗ Cuenta no convertida",
+        message:"Despídete con clase, deja contacto, y conecta en LinkedIn con nota personalizada. Re-evaluar en 12 meses con nuevo trigger event (cambio regulatorio, expansión, fusión)."
+      },
+      d_drop_polite:{
+        type:"terminal", kind:"partial",
+        title:"⚠ Sin apertura por ahora",
+        message:"Conectar en LinkedIn. Mandar boletín trimestral ejecutivo (no operativo). Re-marcar en 6-9 meses con un trigger relevante a su industria."
+      },
+      d_diff_industry:{
+        type:"terminal", kind:"partial",
+        title:"➡ Necesita caso de su industria específica",
+        message:"Acción: buscar/preparar caso de éxito de SU industria exacta. Si no existe, ofrecerle ser tu primer caso documentado (con descuento o piloto). Re-marcar con caso correcto en 1-2 semanas."
+      },
+      d_proposal_blind:{
+        type:"terminal", kind:"fail",
+        title:"⚠ Propuesta sin follow-up agendado = baja conversión",
+        message:"Riesgo de que se pierda en su bandeja. Manda propuesta CORTA (1 página), agrega nota: 'Le marco el viernes a las 11 para revisar 10 min, salvo que prefiera otro horario'. Marca disciplinadamente."
+      }
+    }
+  }
+};
+
+/* ============================================================
+   CARDS DATA — original library (kept intact)
+   ============================================================ */
+const CARDS = [
+  {cat:"apertura", catLabel:"Apertura de Llamada", icon:"📞", quote:"Apertura efectiva con permiso (Permission-based opening)", diff:"easy", tag:"Inicio",
+    why:"Las primeras 15 segundos definen si te cuelgan o te escuchan. El cliente no espera tu llamada y su instinto es defenderse. Pedir permiso y ser transparente desarma esa barrera inicial.",
+    technique:"Honestidad radical + permiso explícito",
+    responses:[
+      {label:"Versión estándar",text:"\"Hola [Nombre], le habla [Tu nombre] de [Agencia]. Le voy a ser totalmente honesto: esta es una llamada planeada, no acordada. ¿Me da 27 segundos para explicarle por qué creí que valía la pena marcarle, y al final usted me dice si seguimos o aquí lo dejamos?\""},
+      {label:"Con trigger event",text:"\"Hola [Nombre], soy [Tu nombre] de [Agencia]. Vi que [empresa] importó recientemente [tipo de mercancía / nueva fracción arancelaria]. Le marco específicamente por eso. ¿Tiene 30 segundos?\""},
+      {label:"Referido / cuenta común",text:"\"Hola [Nombre], me presento: [Tu nombre] de [Agencia]. [Persona/empresa común] me sugirió que le hablara porque trabajamos un caso similar al de ustedes el mes pasado. ¿Es buen momento para 2 minutos?\""}
+    ],
+    followup:"Si dice sí: «Gracias. En una frase: ayudamos a importadores como [empresa similar] a reducir tiempos de despacho y evitar multas por clasificación. ¿Hoy ustedes mueven importaciones por qué aduana principalmente?»",
+    redflags:["No abrir con: \"¿Cómo está usted hoy?\" — quema 5 segundos y suena a vendedor.","No mentir sobre referidos. Es comunidad pequeña, se sabe.","No leer un script monótono — escucha activa desde el segundo uno."]},
+  {cat:"apertura", catLabel:"Apertura de Llamada", icon:"📞", quote:"Pitch de valor en 30 segundos", diff:"easy", tag:"Inicio",
+    why:"Después del permiso, tienes una ventana muy corta para enganchar. El pitch debe enfocarse en dolor, no en features de tu agencia.",
+    technique:"Estructura: Para [perfil] · Que sufren [dolor] · Hacemos [valor] · Resultado [métrica]",
+    responses:[
+      {label:"Pitch importadores frecuentes",text:"\"Trabajamos con importadores que mueven entre 20 y 200 pedimentos al mes y que están perdiendo tiempo y dinero por reclasificaciones, demoras en patio fiscal, o glosas inesperadas del SAT. Lo que hacemos es prevenir ese tipo de incidencias antes de que el contenedor toque puerto. Empresas como [cliente] redujeron sus tiempos de despacho 40% en 90 días.\""},
+      {label:"Pitch IMMEX/Maquila",text:"\"Atendemos plantas IMMEX y maquilas que necesitan controles muy finos sobre temporales, retornos, y anexos 24/30/31. Lo que ofrecemos es un agente aduanal con sistema en línea de inventarios y trazabilidad pedimento a pedimento.\""},
+      {label:"Pitch PYME exportadora",text:"\"Apoyamos a PYMES que están empezando a exportar y que no quieren equivocarse en clasificación, certificados de origen, o reglas T-MEC. Nuestro valor es asesoría operativa real, no solo despacho.\""}
+    ],
+    followup:"\"¿Cuál de estos tres escenarios se parece más a lo que ustedes viven hoy?\"",
+    redflags:["No hablar de \"35 años de experiencia\" en el pitch — al cliente eso no le importa todavía.","No mencionar precio en el pitch.","No hablar más de 30 segundos sin hacer una pregunta."]},
+  {cat:"tiempo", catLabel:"Objeción de Tiempo", icon:"⏱", quote:"Estoy ocupado, no puedo hablar ahora", diff:"easy", tag:"Frecuente",
+    why:"Es la objeción #1 y el 80% de las veces es un reflejo, no un rechazo. El cliente tampoco te conoce todavía como para darte tiempo.",
+    technique:"Validar + acotar tiempo + dejar la puerta abierta con propuesta concreta",
+    responses:[
+      {label:"Acotar y reagendar",text:"\"Lo entiendo perfecto, [Nombre]. ¿Le funciona si le marco mañana a las 10:00 o prefiere a las 4:00 de la tarde? Solo necesito 7 minutos para validar si lo que tenemos aplica a su operación.\""},
+      {label:"Validar urgencia y seguir",text:"\"Lo escucho. Solo dígame: ¿la causa de que esté ocupado es algo de comercio exterior — un despacho atorado, una glosa, un contenedor en patio? Porque si es eso, justo ahí podemos ayudar.\""},
+      {label:"Pedir 60 segundos",text:"\"Entiendo. ¿Puedo robarle 60 segundos para decirle por qué le hablé y de ahí usted decide si seguimos otro día?\""}
+    ],
+    followup:"\"¿Le marco mañana a las [hora] o prefiere que le mande un calendarizado al correo para que usted elija?\"",
+    redflags:["Si dice \"mándame correo\" — eso es brush-off, ver tarjeta correspondiente.","No insistir más de dos veces en la misma llamada."]},
+  {cat:"tiempo", catLabel:"Objeción de Tiempo", icon:"⏱", quote:"Llámame en 6 meses / el próximo trimestre", diff:"med", tag:"Frecuente",
+    why:"Casi siempre es manera educada de quitarte. Pero a veces es real: contratos que vencen, presupuestos por aprobar, planes de expansión.",
+    technique:"Calificar la razón antes de aceptar el aplazamiento",
+    responses:[
+      {label:"Indagar la razón",text:"\"Claro, agendo. ¿Me ayuda a entender qué cambia en 6 meses? ¿Vence un contrato, aumentan importaciones, abre nueva línea? Le pregunto para que cuando le hable le traiga información útil.\""},
+      {label:"Sembrar valor mientras tanto",text:"\"Perfecto. Mientras tanto, ¿le parece si le mando un boletín mensual con cambios en LIGIE, nuevas resoluciones del SAT y movimientos arancelarios?\""},
+      {label:"Reto suave",text:"\"Si en estos 6 meses tienen una incidencia — una glosa, un contenedor demorado — ¿le parece bien que tengan al menos un segundo agente al cual llamar para una opinión?\""}
+    ],
+    followup:"\"¿Le agendo en mi calendario para el [mes específico] o prefiere que le marque antes si surge algo relevante?\"",
+    redflags:["Si no te da una razón concreta para los 6 meses — es brush-off.","No aceptar plazos vagos como \"más adelante\"."]},
+  {cat:"interes", catLabel:"Objeción de Interés", icon:"🎯", quote:"No me interesa", diff:"med", tag:"Frecuente",
+    why:"El 90% de las veces \"no me interesa\" significa \"no entendí qué me ofreces\" o \"no veo el valor todavía\".",
+    technique:"Aceptar la objeción + replantear con curiosidad",
+    responses:[
+      {label:"Pregunta de redirección",text:"\"Entiendo. Solo por curiosidad, ¿no le interesa porque ya tienen agente, porque no es el área que usted ve, o porque la llamada le cayó en mal momento?\""},
+      {label:"Validar y resembrar",text:"\"Le entiendo. Antes de despedirme: las empresas que primero me dijeron lo mismo y luego nos dieron 5 minutos, lo que más rescataron fue [beneficio concreto].\""},
+      {label:"Cerrar con dignidad",text:"\"Sin problema. ¿Puedo al menos dejarle mi contacto por correo para que en un futuro, si tienen alguna situación atorada en aduana, sepan a quién marcar?\""}
+    ],
+    followup:"\"De los importadores con los que trabajamos, lo que más les preocupa hoy es [reformas SAT, T-MEC]. ¿A ustedes eso les pega?\"",
+    redflags:["No discutir. Si insiste \"no me interesa\" después del segundo intento, agradece y cuelga."]},
+  {cat:"interes", catLabel:"Objeción de Interés", icon:"🎯", quote:"Mándame información por correo", diff:"hard", tag:"Brush-off",
+    why:"En el 95% de los casos esto significa \"quiero colgar\". El correo no se va a leer.",
+    technique:"Aceptar parcialmente + condicionar el envío a una mini-discovery",
+    responses:[
+      {label:"Condicionar el envío",text:"\"Con mucho gusto le mando información, pero le pido un favor: para no mandarle un PDF genérico que se pierda, ¿me regala 90 segundos para preguntarle 2 cosas y mandarle algo específico?\""},
+      {label:"Agendar mientras envías",text:"\"Perfecto, se lo mando hoy. Para asegurarme de que llegó, ¿le parece si agendamos 10 minutos el [día] para revisarlo juntos rápido?\""},
+      {label:"Pedir intención",text:"\"Antes le pregunto sin filtros: ¿me lo está pidiendo porque realmente le interesa explorar, o es la forma educada de pedirme que cuelgue?\""}
+    ],
+    followup:"\"¿Qué me ayudaría a saber sobre su operación para mandarle algo verdaderamente útil?\"",
+    redflags:["NUNCA mandes solo brochure genérico.","Si insiste solo en correo sin dar info — manda y pásalo a baja prioridad."]},
+  {cat:"proveedor", catLabel:"Objeción de Proveedor Actual", icon:"🤝", quote:"Ya tenemos agente aduanal y estamos contentos", diff:"med", tag:"Frecuente",
+    why:"Es la objeción más común en aduanas. Cambiar de agente se percibe como riesgo enorme.",
+    technique:"Validar + sembrar segundo proveedor + métricas comparables",
+    responses:[
+      {label:"Plantar segundo agente",text:"\"Me parece excelente. No le pido que cambien. Las empresas con operaciones serias casi siempre tienen un segundo agente como respaldo. ¿Tienen actualmente ese respaldo?\""},
+      {label:"Contraste sutil",text:"\"¿Hoy ustedes tienen visibilidad en línea, pedimento por pedimento, con sus tiempos reales de despacho y costos comparativos por aduana?\""},
+      {label:"Pedir benchmark",text:"\"Perfecto. Permítame una pregunta: ¿qué tiempos manejan hoy en despacho promedio, y cuánto pagan en honorarios por pedimento?\""}
+    ],
+    followup:"\"Si en los próximos 6 meses tuvieran una incidencia, ¿a quién llamarían como segunda opinión?\"",
+    redflags:["NUNCA hablar mal del agente actual.","No ofrecer \"romper contrato\" como gancho.","La estrategia es entrar como \"segundo agente\"."]},
+  {cat:"proveedor", catLabel:"Objeción de Proveedor Actual", icon:"🤝", quote:"Tenemos contrato vigente, no podemos cambiar", diff:"med", tag:"",
+    why:"En aduanas raramente hay contratos exclusivos vinculantes — suele ser carta-encomienda.",
+    technique:"Calificar la naturaleza del contrato + aprovechar fecha de vencimiento",
+    responses:[
+      {label:"Calificar contrato",text:"\"¿Es un contrato exclusivo con cláusula de penalización, o carta-encomienda que se puede ampliar a un segundo agente?\""},
+      {label:"Capturar fecha",text:"\"¿En qué fecha aproximada vence ese contrato? Para hacer la llamada de seguimiento 60 días antes.\""},
+      {label:"Coexistencia",text:"\"Déjenos atender una sola operación piloto — la aduana donde su agente actual sea más débil. Sin compromiso.\""}
+    ],
+    followup:"\"¿Qué cláusula específica le impediría darnos una operación piloto?\"",
+    redflags:["No presionar para que rompa contrato.","Apuntar fecha de vencimiento en CRM con alerta a 90 días."]},
+  {cat:"proveedor", catLabel:"Objeción de Proveedor Actual", icon:"🤝", quote:"Mi agente es familiar / amigo desde hace años", diff:"hard", tag:"Difícil",
+    why:"La objeción más fuerte. La relación personal pesa muchísimo en aduanas.",
+    technique:"Respeto absoluto + propuesta de complementariedad",
+    responses:[
+      {label:"Respetar y proponer rol distinto",text:"\"Lo entiendo y lo respeto al 100%. No vengo a competir contra eso. Lo que sí puedo ofrecer es ser su segundo par de ojos para opiniones técnicas independientes.\""},
+      {label:"Ofrecerse como respaldo",text:"\"Si su agente — Dios no quiera — se enferma, vacaciona, o tiene un problema operativo, ¿quién despacha sus contenedores ese día?\""},
+      {label:"Cerrar con dignidad",text:"\"Le dejo mi contacto. Si en algún momento necesitan una segunda opinión, marquen sin pena.\""}
+    ],
+    followup:"\"¿Hoy tienen agente alterno declarado en VUCEM?\"",
+    redflags:["Bajo ningún motivo cuestionar la calidad del agente familiar.","Hay clientes que NUNCA van a cambiar — invierte tiempo limitado."]},
+  {cat:"necesidad", catLabel:"Objeción de Necesidad", icon:"📦", quote:"No importamos mucho / nuestro volumen es bajo", diff:"easy", tag:"",
+    why:"Puede ser cierto o excusa. Hay que calificar volumen y descubrir potencial de crecimiento.",
+    technique:"Calificar volumen real + redirigir al valor de calidad sobre cantidad",
+    responses:[
+      {label:"Calificar números",text:"\"Cuando dice poco, ¿hablamos de 1-2 pedimentos al mes, 5, 10? Le pregunto porque atendemos desde importadores ocasionales hasta grandes corporativos.\""},
+      {label:"Redirigir a riesgo",text:"\"Volumen bajo no significa riesgo bajo. Una sola operación mal clasificada puede costar más que 100 bien hechas. ¿Qué tan complejas son sus mercancías?\""},
+      {label:"Plantear futuro",text:"\"¿Tienen planes de crecimiento en importaciones — productos nuevos, proveedores nuevos, expansión a otra aduana?\""}
+    ],
+    followup:"\"¿Qué los detiene de importar más volumen — mercado, proveedores, complejidad operativa?\"",
+    redflags:["No descalificar prematuramente. Importadores chicos crecen."]},
+  {cat:"necesidad", catLabel:"Objeción de Necesidad", icon:"📦", quote:"Tenemos IMMEX y nuestro proveedor maneja todo", diff:"hard", tag:"IMMEX",
+    why:"Cuentas IMMEX son de las más jugosas y de las más cerradas. El control sobre temporales y anexos es crítico.",
+    technique:"Hablar con dolor específico de IMMEX (anexos 24/30/31, retornos, descargas)",
+    responses:[
+      {label:"Tocar anexos",text:"\"¿Hoy tienen 100% de visibilidad de su anexo 24 actualizado en línea, con cuadre exacto contra inventario físico?\""},
+      {label:"Tocar plazos de retorno",text:"\"¿Cuál es su tasa de retornos en plazo (los 18 meses) hoy? Porque ese es el riesgo de virtual real en IMMEX.\""},
+      {label:"Auditoría preventiva",text:"\"¿Alguna vez les han hecho auditoría preventiva externa de su programa IMMEX, antes de que llegue SAT o SE?\""}
+    ],
+    followup:"\"¿Cuándo fue su última visita oficial de SAT o SE a su programa IMMEX?\"",
+    redflags:["No prometer mejoras sin haber visto la operación.","Cuentas IMMEX: ciclo de venta largo (6-18 meses)."]},
+  {cat:"precio", catLabel:"Objeción de Precio", icon:"💰", quote:"Es muy caro / sus tarifas son altas", diff:"med", tag:"Frecuente",
+    why:"Casi siempre la dicen ANTES de saber valores reales. Comparan honorarios sin contar costo total.",
+    technique:"No bajar precio reflexivamente + replantear hacia costo total",
+    responses:[
+      {label:"Indagar comparación",text:"\"¿Caro comparado con qué — con su agente actual, con cotizaciones que recibieron, o con su expectativa de mercado?\""},
+      {label:"Costo total vs honorario",text:"\"Probablemente sí somos más caros en honorarios. Pero medimos costo total — tiempo de despacho, días de almacenaje evitados, glosas prevenidas, multas no pagadas.\""},
+      {label:"Cambiar variable",text:"\"¿Qué les pasa cuando un agente despacha rápido pero clasifica mal? Esos costos invisibles son los que evitamos.\""}
+    ],
+    followup:"\"¿Cuántas veces el último año tuvieron una glosa, multa, o demora aduanera no prevista?\"",
+    redflags:["NUNCA bajar precio antes de demostrar valor.","Si insiste solo en precio — calificación equivocada."]},
+  {cat:"precio", catLabel:"Objeción de Precio", icon:"💰", quote:"Necesito cotización por escrito antes de hablar", diff:"hard", tag:"",
+    why:"Cotizar a ciegas es perder. Sin entender operación, vas a cotizar mal.",
+    technique:"Negarse cortésmente + condicionar cotización a discovery",
+    responses:[
+      {label:"Condicionar cotización",text:"\"Cotizarle sin entender su operación me hace cotizar mal. ¿Me regala 15 minutos para conocer su mercancía y aduanas, y le mando cotización seria al día siguiente?\""},
+      {label:"Cotización rangos",text:"\"Le puedo mandar nuestros rangos generales hoy. Pero la cotización real depende de tipo de mercancía, fracciones, aduana, IMMEX o no.\""},
+      {label:"Pedir pedimento",text:"\"¿Me podría compartir un pedimento reciente — uno típico de su operación? Con eso le mando análisis comparativo de honorarios y servicios.\""}
+    ],
+    followup:"\"De los honorarios actuales, ¿qué incluye y qué no incluye su agente — preclasificación, sistema en línea, soporte 24/7?\"",
+    redflags:["NO mandar cotización ciega — pierdes credibilidad.","Si solo quieren cotización — probablemente solo te usan de comparativo."]},
+  {cat:"autoridad", catLabel:"Objeción de Autoridad", icon:"🏢", quote:"No soy yo quien decide / esa decisión la toma mi jefe", diff:"med", tag:"Frecuente",
+    why:"Puede ser real o escape. Tu objetivo: descubrir el verdadero decision-maker y conseguir aliado interno.",
+    technique:"Validar + mapear estructura + reclutar champion interno",
+    responses:[
+      {label:"Mapear estructura",text:"\"¿Quién es la persona que toma decisiones sobre el agente aduanal — el director de logística, comercio exterior, finanzas?\""},
+      {label:"Reclutar champion",text:"\"Igual su opinión vale mucho. ¿Le gustaría que primero nos sentemos los dos rápido, sin compromiso, para que usted vea si vale la pena que lo conozca su jefe?\""},
+      {label:"Pedir intro",text:"\"¿Me ayudaría a presentarme con [nombre del decisor]? Le mando un correo corto que usted puede reenviar.\""}
+    ],
+    followup:"\"¿Qué necesita ver su jefe para considerar evaluar agentes alternos?\"",
+    redflags:["No ofender al gatekeeper saltándotelo.","Conseguir el correo directo del decisor SIEMPRE."]},
+  {cat:"confianza", catLabel:"Objeción de Confianza", icon:"🛡", quote:"No los conozco / no tengo referencias suyas", diff:"med", tag:"",
+    why:"Es objeción legítima en aduanas — el agente maneja documentación crítica, montos altos, riesgos legales.",
+    technique:"Ofrecer credenciales concretas + casos de éxito + referencias verificables",
+    responses:[
+      {label:"Credenciales concretas",text:"\"Somos agente aduanal autorizado patente [número], con [años] de experiencia, oficinas en [aduanas], y manejamos clientes como [referencias]. ¿Le mando dossier con casos de su industria y tres referencias a quienes pueda llamar directo?\""},
+      {label:"Visita oficina",text:"\"Visite nuestras oficinas, conozca al equipo, vea el sistema operativo. Sin compromiso.\""},
+      {label:"Auditar primera operación",text:"\"Hagamos una operación piloto, con auditoría externa si gusta. Sin penalización si decide no continuar.\""}
+    ],
+    followup:"\"¿Qué tipo de prueba o referencia le daría tranquilidad para considerarnos?\"",
+    redflags:["No improvisar credenciales — tener dossier digital listo.","Tener mínimo 3 referencias por industria autorizadas."]},
+  {cat:"confianza", catLabel:"Objeción de Confianza", icon:"🛡", quote:"Tuvimos mala experiencia con agente anterior", diff:"hard", tag:"Sensible",
+    why:"Oportunidad enorme. Hay dolor real, hay desconfianza activa.",
+    technique:"Escucha activa profunda + diagnóstico + garantías concretas",
+    responses:[
+      {label:"Empatizar y escuchar",text:"\"Lo siento mucho. ¿Me puede contar qué pasó? Con detalle, no me corre prisa.\""},
+      {label:"Diagnóstico estructurado",text:"\"Lo que falló fue ¿velocidad, comunicación, errores técnicos, costos ocultos, o falta de respuesta en crisis?\""},
+      {label:"Garantía explícita",text:"\"Empezamos con una sola operación, con SLA por escrito, ejecutivo dedicado con celular directo, y reporte semanal. Si en 90 días no cumplimos, no hay penalización.\""}
+    ],
+    followup:"\"¿Qué hubiera necesitado pasar para que esa experiencia no se hubiera dado?\"",
+    redflags:["No interrumpir mientras se desahoga.","Anotar TODO lo mencionado — eso es tu propuesta a la medida."]},
+  {cat:"tecnico", catLabel:"Objeción Operativa", icon:"⚙", quote:"No tienen oficina en mi aduana principal", diff:"med", tag:"Operativo",
+    why:"Objeción legítima a veces, pero hoy con corresponsalías es manejable.",
+    technique:"Aclarar cobertura real + corresponsalías + servicio remoto",
+    responses:[
+      {label:"Si SÍ cubrimos vía corresponsalía",text:"\"Aunque no tenemos oficina física en [aduana], operamos esa aduana con corresponsalía / equipo remoto. ¿Le interesa que le explique cómo funciona?\""},
+      {label:"Si tenemos sucursal cerca",text:"\"Tenemos oficina en [aduana cercana], a [X horas]. Movemos los despachos remotamente con tiempos de respuesta iguales.\""},
+      {label:"Si NO podemos cubrir bien",text:"\"En [aduana] no somos la mejor opción. Pero si en algún momento mueven mercancía por [aduanas que cubrimos], ahí sí seríamos competitivos.\""}
+    ],
+    followup:"\"¿Qué porcentaje de su operación pasa por [aduana mencionada] vs otras?\"",
+    redflags:["NO mentir sobre cobertura.","Tener mapa actualizado de aduanas cubiertas."]},
+  {cat:"cierre", catLabel:"Brush-offs y Cierre", icon:"🚪", quote:"No estamos buscando cambio en este momento", diff:"med", tag:"Brush-off",
+    why:"Versión cortés del \"no me interesa\". Suele significar que no hay dolor activo.",
+    technique:"Aceptar parcialmente + sembrar dolor + agendar nurture",
+    responses:[
+      {label:"Plantar dolor latente",text:"\"Las empresas no buscan cambiar hasta que pasa algo: una glosa, un contenedor varado. ¿Prefieren empezar a buscar agente alterno en momento de crisis, o tener uno ya identificado por si acaso?\""},
+      {label:"Solo mantener radar",text:"\"¿Le parece bien si le mando 1 correo cada 2-3 meses con información útil? Sin llamadas.\""},
+      {label:"Pedir trigger",text:"\"¿Qué tendría que pasar para que sí estuvieran abiertos a evaluar?\""}
+    ],
+    followup:"\"¿Cuándo evalúan formalmente proveedores de comercio exterior?\"",
+    redflags:["No insistir agresivamente.","La pregunta de \"¿qué tendría que pasar?\" es de las más valiosas."]},
+  {cat:"cierre", catLabel:"Brush-offs y Cierre", icon:"🚪", quote:"Cierre exitoso: agendar reunión técnica", diff:"easy", tag:"Cierre",
+    why:"Llegaste al objetivo de SDR. No la quemes con exceso de información.",
+    technique:"Confirmar agenda + setear expectativas + enviar invitación inmediata",
+    responses:[
+      {label:"Cierre estándar",text:"\"Cerramos entonces [día] a las [hora]. La junta dura 30 minutos, va a estar [Nombre del AE], y vamos a revisar [3 puntos]. ¿Algo específico que quiera que llevemos preparado?\""},
+      {label:"Confirmar asistentes",text:"\"¿Va a ser solo usted, o invitamos también a alguien de logística / comercio exterior?\""},
+      {label:"Pre-trabajo",text:"\"¿Podría compartirnos antes 1-2 pedimentos típicos para llegar con análisis preliminar?\""}
+    ],
+    followup:"\"¿Le mando la invitación al correo [confirmar correo]?\"",
+    redflags:["Mandar invitación de calendario en menos de 5 minutos.","Pasar handoff completo a AE."]},
+  {cat:"descubrimiento", catLabel:"Preguntas de Descubrimiento", icon:"🔍", quote:"Preguntas para calificar al lead (BANT/MEDDIC)", diff:"easy", tag:"Discovery",
+    why:"Si superas las objeciones iniciales, tienes 5-10 minutos para calificar.",
+    technique:"Preguntas abiertas + escuchar 80% / hablar 20%",
+    responses:[
+      {label:"Preguntas de operación",text:"\"¿Cuántas operaciones de importación/exportación al mes? · ¿Por qué aduanas? · ¿Qué tipo de mercancías? · ¿Régimen general, IMMEX, PROSEC?\""},
+      {label:"Preguntas de dolor",text:"\"¿Qué fue lo último que les salió mal? · ¿Cuántas glosas o multas en los últimos 12 meses? · ¿Cuál es el cuello de botella más común?\""},
+      {label:"Preguntas de proveedor",text:"\"¿Con cuántos agentes operan? · ¿Cuánto tiempo con su principal? · ¿Qué les gusta y qué cambiarían?\""},
+      {label:"Preguntas de decisión",text:"\"¿Cómo es su proceso de evaluación? · ¿Quién toma la decisión final? · ¿Cuándo es el próximo momento natural para evaluar?\""}
+    ],
+    followup:"\"De todo lo que me ha contado, ¿qué es lo que más les preocupa hoy en su operación de comercio exterior?\"",
+    redflags:["No hacer las 12 preguntas seguidas — convertir en conversación.","Tomar notas mientras hablan."]}
+];
+
+const CARD_CATS = [
+  {key:"apertura", label:"Apertura de Llamada", icon:"📞", iconClass:"icon-apertura"},
+  {key:"tiempo", label:"Objeciones de Tiempo", icon:"⏱", iconClass:"icon-tiempo"},
+  {key:"interes", label:"Objeciones de Interés", icon:"🎯", iconClass:"icon-interes"},
+  {key:"proveedor", label:"Objeciones de Proveedor Actual", icon:"🤝", iconClass:"icon-proveedor"},
+  {key:"necesidad", label:"Objeciones de Necesidad", icon:"📦", iconClass:"icon-necesidad"},
+  {key:"precio", label:"Objeciones de Precio", icon:"💰", iconClass:"icon-precio"},
+  {key:"autoridad", label:"Objeciones de Autoridad", icon:"🏢", iconClass:"icon-autoridad"},
+  {key:"confianza", label:"Objeciones de Confianza", icon:"🛡", iconClass:"icon-confianza"},
+  {key:"tecnico", label:"Objeciones Operativas", icon:"⚙", iconClass:"icon-tecnico"},
+  {key:"cierre", label:"Brush-offs y Cierre", icon:"🚪", iconClass:"icon-cierre"},
+  {key:"descubrimiento", label:"Preguntas de Descubrimiento", icon:"🔍", iconClass:"icon-descubrimiento"}
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentPersona = "recepcionista";
+let currentMode = "guided";
+let currentView = "flow";
+let history = []; // { nodeId, prospectQuote (only for branch clicks) }
+
+/* ============================================================
+   VIEW SWITCHING
+   ============================================================ */
+function switchView(v){
+  currentView = v;
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.view-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.view-tab[data-view="${v}"]`).classList.add('active');
+  if(v==='map') renderFullMap();
+  if(v==='library') renderLibrary();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.view-tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
+
+/* ============================================================
+   PERSONA + MODE
+   ============================================================ */
+function selectPersona(p){
+  currentPersona = p;
+  document.querySelectorAll('.persona-card').forEach(c=>c.classList.toggle('active', c.dataset.p===p));
+  document.getElementById('active-persona-label').textContent = TREES[p].name;
+  restartConversation();
+  if(currentMode==='map') renderPersonaTreeMap();
+}
+function switchMode(m){
+  currentMode = m;
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===m));
+  document.getElementById('guided-mode').style.display = m==='guided' ? 'block' : 'none';
+  document.getElementById('map-mode').style.display = m==='map' ? 'block' : 'none';
+  if(m==='map') renderPersonaTreeMap();
+}
+
+/* ============================================================
+   GUIDED MODE: walkthrough
+   ============================================================ */
+function restartConversation(){
+  history = [];
+  const tree = TREES[currentPersona];
+  history.push({ nodeId: tree.start, prospectQuote: null });
+  renderConversation();
+}
+function goBack(){
+  if(history.length<=1) return;
+  history.pop();
+  renderConversation();
+}
+
+function renderConversation(){
+  const tree = TREES[currentPersona];
+  const trail = document.getElementById('trail');
+  const step = document.getElementById('current-step');
+  const coachTip = document.getElementById('coach-tip');
+  const redflagSec = document.getElementById('redflag-section');
+  const redflagList = document.getElementById('coach-redflags');
+  const progressMini = document.getElementById('progress-mini');
+  const backBtn = document.getElementById('back-btn');
+
+  trail.innerHTML='';
+  step.innerHTML='';
+  backBtn.disabled = history.length<=1;
+
+  // Build trail (everything except current node's prompt)
+  history.forEach((h, idx)=>{
+    const node = tree.nodes[h.nodeId];
+    // If this node was reached via a prospect quote, show the prospect bubble first
+    if(h.prospectQuote){
+      const pb = document.createElement('div');
+      pb.className='bubble prospect';
+      pb.innerHTML=`<div class="bubble-icon prospect">P</div>
+        <div class="bubble-body"><div class="bubble-label">Prospecto · ${TREES[currentPersona].name}</div>
+        <div class="bubble-text"><em>"${h.prospectQuote}"</em></div></div>`;
+      trail.appendChild(pb);
+    }
+    // Show SDR action if it's not the very last item (last shown in current-step instead)
+    if(idx < history.length-1 && node.type!=='terminal'){
+      const sb = document.createElement('div');
+      sb.className='bubble sdr';
+      sb.innerHTML=`<div class="bubble-icon sdr">SDR</div>
+        <div class="bubble-body"><div class="bubble-label">Tú (SDR) · ${node.text}</div>
+        <div class="bubble-text">${node.sample||''}</div></div>`;
+      trail.appendChild(sb);
+    }
+  });
+
+  // Render current node in current-step area
+  const current = history[history.length-1];
+  const node = tree.nodes[current.nodeId];
+
+  if(node.type === 'terminal'){
+    // Terminal — render result + restart options
+    const term = document.createElement('div');
+    term.className = `terminal ${node.kind}`;
+    term.innerHTML = `
+      <h3>${node.title}</h3>
+      <p>${node.message}</p>
+      <div class="next-actions">
+        <button class="btn primary" onclick="restartConversation()">↻ Reiniciar este flujo</button>
+        ${node.nextPersona?`<button class="btn" onclick="selectPersona('${node.nextPersona}')">→ Continuar a ${TREES[node.nextPersona].name}</button>`:''}
+        <button class="btn" onclick="goBack()">← Atrás</button>
+      </div>`;
+    step.appendChild(term);
+
+    coachTip.innerHTML = `<strong style="color:#fff">Resultado del flujo:</strong> ${node.title}<br><br>${node.message}`;
+    redflagSec.style.display='none';
+  } else {
+    // Render SDR's recommended action with sample + branches
+    const sdrBlock = document.createElement('div');
+    sdrBlock.innerHTML = `
+      <div class="bubble sdr" style="margin-bottom:14px">
+        <div class="bubble-icon sdr">SDR</div>
+        <div class="bubble-body" style="background:#e0f2fe;border-left-color:var(--teal)">
+          <div class="bubble-label" style="color:var(--teal)">▶ Tu siguiente acción · ${node.text}</div>
+          <div class="bubble-text">${node.sample||''}</div>
+        </div>
+      </div>
+      <div class="step-prompt">¿Qué te respondió el prospecto? Click en su respuesta:</div>
+      <div class="branches"></div>
+    `;
+    step.appendChild(sdrBlock);
+    const branchesDiv = sdrBlock.querySelector('.branches');
+    (node.branches||[]).forEach(b=>{
+      const btn = document.createElement('button');
+      btn.className = 'branch';
+      btn.innerHTML = `<span class="branch-quote">${b.quote}</span><span class="branch-arrow">→</span>`;
+      btn.addEventListener('click', ()=>{
+        history.push({ nodeId: b.goto, prospectQuote: b.quote });
+        renderConversation();
+      });
+      branchesDiv.appendChild(btn);
+    });
+
+    // Coach panel
+    coachTip.innerHTML = node.tip || 'Mantén tono profesional, escucha activa, y enfócate en la siguiente pregunta.';
+    if(node.redflags && node.redflags.length){
+      redflagSec.style.display='block';
+      redflagList.innerHTML = node.redflags.map(r=>`<li>${r}</li>`).join('');
+    } else {
+      redflagSec.style.display='none';
+    }
+  }
+
+  // Progress mini-indicator
+  progressMini.innerHTML = '';
+  const totalSteps = history.length;
+  for(let i=0;i<Math.min(totalSteps+2,8);i++){
+    const dot = document.createElement('div');
+    if(i<totalSteps-1) dot.className='progress-dot done';
+    else if(i===totalSteps-1) dot.className='progress-dot current';
+    else dot.className='progress-dot';
+    progressMini.appendChild(dot);
+  }
+  const lbl = document.createElement('span');
+  lbl.className='progress-label';
+  lbl.textContent = `Paso ${totalSteps}`;
+  progressMini.appendChild(lbl);
+
+  // Scroll trail to bottom
+  trail.scrollTop = trail.scrollHeight;
+}
+
+/* ============================================================
+   TREE MAP MODE — outline tree
+   ============================================================ */
+function renderPersonaTreeMap(){
+  const container = document.getElementById('otree');
+  container.innerHTML = '';
+  const tree = TREES[currentPersona];
+  container.appendChild(buildOTreeNode(tree, tree.start, new Set()));
+}
+
+function buildOTreeNode(tree, nodeId, visited){
+  const node = tree.nodes[nodeId];
+  const wrapper = document.createElement('div');
+
+  const nodeDiv = document.createElement('div');
+  let cls = 'otree-node';
+  if(node.type==='sdr') cls += ' sdr';
+  else if(node.type==='terminal') cls += ` terminal-${node.kind}`;
+  nodeDiv.className = cls;
+
+  let icon, iconText, content;
+  if(node.type==='sdr'){
+    icon = 'sdr'; iconText='SDR';
+    content = `<strong>${node.text}</strong><br><em>"${(node.sample||'').replace(/"/g,'')}"</em>`;
+  } else if(node.type==='terminal'){
+    icon = node.kind==='success'?'terminal':(node.kind==='fail'?'terminal-fail':'terminal-partial');
+    iconText = node.kind==='success'?'✓':(node.kind==='fail'?'✗':'⚠');
+    content = `<strong>${node.title}</strong><br><em>${node.message}</em>`;
+  }
+
+  const hasChildren = node.branches && node.branches.length>0;
+  const willCycle = visited.has(nodeId);
+  const showToggle = hasChildren && !willCycle;
+
+  nodeDiv.innerHTML = `
+    <div class="otree-node-content">
+      <div class="otree-toggle ${showToggle?'':'leaf'}" ${showToggle?'onclick="toggleOTree(this)"':''}>${showToggle?'−':' '}</div>
+      <div class="otree-icon ${icon}">${iconText}</div>
+      <div class="otree-text">${content}</div>
+    </div>
+  `;
+  wrapper.appendChild(nodeDiv);
+
+  if(hasChildren && !willCycle){
+    const childrenDiv = document.createElement('div');
+    childrenDiv.className = 'otree-children';
+    visited.add(nodeId);
+    node.branches.forEach(b=>{
+      const childNode = tree.nodes[b.goto];
+      // First show the prospect quote as an intermediate node
+      const promptDiv = document.createElement('div');
+      promptDiv.className = 'otree-node prospect';
+      const subVisited = new Set(visited);
+      const childContent = childNode.type==='sdr'
+        ? `<strong>"${b.quote}"</strong><br><em>→ Te lleva a: ${childNode.text}</em>`
+        : `<strong>"${b.quote}"</strong><br><em>→ ${childNode.title || childNode.text}</em>`;
+
+      const hasGrand = childNode.branches && childNode.branches.length>0 && !subVisited.has(b.goto);
+
+      promptDiv.innerHTML = `
+        <div class="otree-node-content">
+          <div class="otree-toggle ${hasGrand?'':'leaf'}" ${hasGrand?'onclick="toggleOTree(this)"':''}>${hasGrand?'−':' '}</div>
+          <div class="otree-icon prospect">P</div>
+          <div class="otree-text">${childContent}</div>
+        </div>
+      `;
+      childrenDiv.appendChild(promptDiv);
+
+      if(hasGrand){
+        const grandDiv = document.createElement('div');
+        grandDiv.className='otree-children';
+        // Recurse on the SDR/terminal node (without re-showing the prospect quote)
+        const sub = buildOTreeChildOnly(tree, b.goto, subVisited);
+        if(sub) grandDiv.appendChild(sub);
+        promptDiv.appendChild(grandDiv);
+      }
+    });
+    visited.delete(nodeId);
+    wrapper.appendChild(childrenDiv);
+  }
+
+  return wrapper;
+}
+
+function buildOTreeChildOnly(tree, nodeId, visited){
+  // Build subtree showing the SDR action and its branches (without re-showing prospect prompt)
+  const node = tree.nodes[nodeId];
+  if(node.type==='terminal'){
+    const div = document.createElement('div');
+    div.className = `otree-node terminal-${node.kind}`;
+    div.innerHTML = `
+      <div class="otree-node-content">
+        <div class="otree-toggle leaf"> </div>
+        <div class="otree-icon ${node.kind==='success'?'terminal':(node.kind==='fail'?'terminal-fail':'terminal-partial')}">${node.kind==='success'?'✓':(node.kind==='fail'?'✗':'⚠')}</div>
+        <div class="otree-text"><strong>${node.title}</strong><br><em>${node.message}</em></div>
+      </div>`;
+    return div;
+  }
+  // SDR node — render with action + branches
+  const wrapper = document.createElement('div');
+  const div = document.createElement('div');
+  div.className = 'otree-node sdr';
+  const hasChildren = node.branches && node.branches.length>0 && !visited.has(nodeId);
+  div.innerHTML = `
+    <div class="otree-node-content">
+      <div class="otree-toggle ${hasChildren?'':'leaf'}" ${hasChildren?'onclick="toggleOTree(this)"':''}>${hasChildren?'−':' '}</div>
+      <div class="otree-icon sdr">SDR</div>
+      <div class="otree-text"><strong>${node.text}</strong><br><em>"${(node.sample||'').replace(/"/g,'')}"</em></div>
+    </div>`;
+  wrapper.appendChild(div);
+
+  if(hasChildren){
+    const childrenDiv = document.createElement('div');
+    childrenDiv.className = 'otree-children';
+    visited.add(nodeId);
+    node.branches.forEach(b=>{
+      const subVisited = new Set(visited);
+      const childNode = tree.nodes[b.goto];
+      const promptDiv = document.createElement('div');
+      promptDiv.className = 'otree-node prospect';
+      const childContent = childNode.type==='sdr'
+        ? `<strong>"${b.quote}"</strong><br><em>→ ${childNode.text}</em>`
+        : `<strong>"${b.quote}"</strong><br><em>→ ${childNode.title || childNode.text}</em>`;
+      const hasGrand = childNode.branches && childNode.branches.length>0 && !subVisited.has(b.goto);
+      promptDiv.innerHTML = `
+        <div class="otree-node-content">
+          <div class="otree-toggle ${hasGrand?'':'leaf'}" ${hasGrand?'onclick="toggleOTree(this)"':''}>${hasGrand?'−':' '}</div>
+          <div class="otree-icon prospect">P</div>
+          <div class="otree-text">${childContent}</div>
+        </div>`;
+      childrenDiv.appendChild(promptDiv);
+      if(hasGrand){
+        const grandDiv = document.createElement('div');
+        grandDiv.className='otree-children';
+        const sub = buildOTreeChildOnly(tree, b.goto, subVisited);
+        if(sub) grandDiv.appendChild(sub);
+        promptDiv.appendChild(grandDiv);
+      }
+    });
+    visited.delete(nodeId);
+    div.appendChild(childrenDiv);
+  }
+  return wrapper;
+}
+
+function toggleOTree(toggleEl){
+  const nodeContent = toggleEl.parentElement;
+  const node = nodeContent.parentElement;
+  const children = node.querySelector(':scope > .otree-children');
+  if(!children) return;
+  const isHidden = children.classList.toggle('hidden');
+  toggleEl.textContent = isHidden ? '+' : '−';
+  toggleEl.classList.toggle('collapsed', isHidden);
+}
+
+/* ============================================================
+   FULL MAP — all 3 personas
+   ============================================================ */
+function renderFullMap(){
+  const c = document.getElementById('full-map');
+  c.innerHTML = '';
+  Object.keys(TREES).forEach(pkey=>{
+    const tree = TREES[pkey];
+    const sec = document.createElement('div');
+    sec.style.marginBottom = '36px';
+    sec.innerHTML = `
+      <h3 style="font-size:18px;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:10px">
+        <span style="width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px">${tree.icon}</span>
+        ${tree.name}
+      </h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;max-width:780px">${tree.intro}</p>
+    `;
+    const treeDiv = document.createElement('div');
+    treeDiv.className = 'otree';
+    treeDiv.appendChild(buildOTreeNode(tree, tree.start, new Set()));
+    sec.appendChild(treeDiv);
+    c.appendChild(sec);
+  });
+}
+
+/* ============================================================
+   LIBRARY (cards)
+   ============================================================ */
+let cardFilter = 'all';
+let cardSearch = '';
+
+function renderLibrary(){
+  const main = document.getElementById('library-content');
+  main.innerHTML = '';
+  const search_lc = cardSearch.trim().toLowerCase();
+  CARD_CATS.forEach(cat=>{
+    if(cardFilter!=='all' && cardFilter!==cat.key) return;
+    const items = CARDS.filter(d=>{
+      if(d.cat !== cat.key) return false;
+      if(!search_lc) return true;
+      const blob = (d.quote+' '+d.why+' '+d.technique+' '+(d.responses||[]).map(r=>r.text+' '+r.label).join(' ')).toLowerCase();
+      return blob.includes(search_lc);
+    });
+    if(items.length===0) return;
+    const section = document.createElement('section');
+    section.className = 'section';
+    section.innerHTML = `
+      <div class="section-header">
+        <div class="section-icon ${cat.iconClass}">${cat.icon}</div>
+        <h2>${cat.label}</h2>
+        <div class="count">${items.length}</div>
+      </div>
+      <div class="grid"></div>`;
+    const grid = section.querySelector('.grid');
+    items.forEach(d=>{
+      const idx = CARDS.indexOf(d);
+      const card = document.createElement('div');
+      card.className = `card diff-${d.diff||'med'}`;
+      card.innerHTML = `
+        <div class="card-quote">${d.quote}</div>
+        <div class="card-meta">
+          ${d.tag?`<span class="card-tag">${d.tag}</span>`:'<span></span>'}
+          <span class="card-arrow">→</span>
+        </div>`;
+      card.addEventListener('click',()=>openCardModal(idx));
+      grid.appendChild(card);
+    });
+    main.appendChild(section);
+  });
+  if(main.children.length===0){
+    main.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--muted)">
+      <div style="font-size:42px;margin-bottom:14px">🔍</div>
+      <h3 style="color:var(--navy);margin-bottom:6px">Sin resultados</h3>
+      <p>No se encontraron objeciones con ese criterio.</p></div>`;
+  }
+}
+
+document.querySelectorAll('#view-library .filter-pill').forEach(p=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('#view-library .filter-pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    cardFilter = p.dataset.cat;
+    renderLibrary();
+  });
+});
+document.getElementById('searchBox').addEventListener('input', e=>{
+  cardSearch = e.target.value;
+  renderLibrary();
+});
+
+function openCardModal(idx){
+  const d = CARDS[idx];
+  const cat = CARD_CATS.find(c=>c.key===d.cat);
+  const html = `
+    <div class="modal-header">
+      <div class="modal-category">${cat.icon} ${cat.label}</div>
+      <div class="modal-quote">${d.quote}</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="block">
+        <div class="block-label"><span class="dot"></span>Por qué surge esta objeción</div>
+        <div class="block-content">${d.why}</div>
+      </div>
+      <div class="block tip">
+        <div class="block-label"><span class="dot"></span>Técnica recomendada</div>
+        <div class="block-content"><strong>${d.technique}</strong></div>
+      </div>
+      <div class="block">
+        <div class="block-label"><span class="dot"></span>Respuestas sugeridas</div>
+        <div class="responses">
+          ${d.responses.map(r=>`<div class="response"><strong>${r.label}</strong>${r.text}</div>`).join('')}
+        </div>
+      </div>
+      ${d.followup?`<div class="block"><div class="block-label"><span class="dot"></span>Pregunta de seguimiento</div><div class="followup">${d.followup}</div></div>`:''}
+      ${d.redflags && d.redflags.length?`<div class="block warning"><div class="block-label"><span class="dot"></span>Banderas rojas</div><ul class="checklist redflag">${d.redflags.map(r=>`<li>${r}</li>`).join('')}</ul></div>`:''}
+    </div>`;
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+/* ============================================================
+   INIT
+   ============================================================ */
+selectPersona('recepcionista');
+renderLibrary();
+</script>
+</body>
+</html>
